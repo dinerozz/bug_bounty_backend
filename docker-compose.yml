@@ -1,11 +1,13 @@
 version: '3.8'
 services:
   app:
+    network_mode: host
     build: .
     ports:
       - "8080:8080"
     depends_on:
       - db
+
   db:
     image: postgres:14-alpine
     environment:

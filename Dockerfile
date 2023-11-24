@@ -1,13 +1,21 @@
-FROM golang:1.18-alpine
+FROM golang:1.21-alpine as BuildStage
 
+# BUILD
 WORKDIR /app
 
-COPY go.mod ./
+COPY . .
 
 RUN go mod download
 
-COPY *.go ./
-
 RUN go build -o /myapp
+
+# RUN
+FROM alpine
+
+COPY .env /app/.env
+
+WORKDIR /app
+
+COPY --from=BuildStage /myapp /myapp
 
 CMD [ "/myapp" ]
