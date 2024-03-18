@@ -3,15 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/dinerozz/bug_bounty_backend/cmd/migrate"
+	db "github.com/dinerozz/bug_bounty_backend/config"
+	"github.com/dinerozz/bug_bounty_backend/pkg/auth"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
 )
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Привет, мир!")
-}
 
 func main() {
 	godotenv.Load(".env")
@@ -26,18 +24,16 @@ func main() {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		dbHost, dbPort, dbUser, dbPassword, dbName)
 
-	fmt.Println("dsn")
-	fmt.Println(dsn)
+	dbPool := db.ConnectToDB(dsn)
+	defer dbPool.Close()
 
-	db := migrate.ConnectToDB(dsn)
-
-	migrate.RunMigrations(db, "cmd/migrate/migrations/000001_init_schema.down.sql")
-	migrate.RunMigrations(db, "cmd/migrate/migrations/000001_init_schema.up.sql")
+	migrate.RunMigrations(dbPool, "migrations")
 
 	defer db.Close()
 	fmt.Println("Successfully connected to database!")
 
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/register", auth.RegisterHandler)
+	http.HandleFunc("/authenticate", auth.AuthenticateHandler)
 
 	log.Println("Запуск сервера на http://localhost:5555")
 	log.Fatal(http.ListenAndServe("localhost:5555", nil))

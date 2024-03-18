@@ -1,47 +1,36 @@
 package migrate
 
 import (
-	"database/sql"
+	"context"
 	"embed"
 	"fmt"
+	"io/fs"
 	"log"
-	"os"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func ConnectToDB(dsn string) *sql.DB {
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		log.Fatal("Ошибка при подключении к базе данных:", err)
-	}
-
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("Ошибка при проверке соединения с базой данных:", err)
-	}
-
-	fmt.Println("Успешное подключение к базе данных")
-	return db
-}
-
-//go:embed migrations
+//go:embed migrations/*.sql
 var migrations embed.FS
 
-func RunMigrations(db *sql.DB, filename string) {
-	content, err := os.ReadFile(filename)
-
+func RunMigrations(dbPool *pgxpool.Pool, migrationsPath string) {
+	migrationFiles, err := fs.ReadDir(migrations, migrationsPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Не удалось прочитать директорию с миграциями:", err)
 	}
 
-	requests := string(content)
-	_, err = db.Exec(requests)
+	for _, file := range migrationFiles {
+		fileName := file.Name()
+		fileContent, err := fs.ReadFile(migrations, fmt.Sprintf("%s/%s", migrationsPath, fileName))
+		if err != nil {
+			log.Fatal("Ошибка при чтении файла миграции:", err)
+		}
 
-	if err != nil {
-		log.Fatal(err)
+		_, err = dbPool.Exec(context.Background(), string(fileContent))
+		if err != nil {
+			log.Fatalf("Ошибка при выполнении миграции %s: %v", fileName, err)
+		}
+
+		log.Printf("Миграция %s успешно применена", fileName)
 	}
-
-	log.Print("Migrations have been successfully applied")
-
 }
