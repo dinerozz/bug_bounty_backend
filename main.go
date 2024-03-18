@@ -26,11 +26,12 @@ func main() {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		dbHost, dbPort, dbUser, dbPassword, dbName)
 
+	fmt.Println("dsn")
 	fmt.Println(dsn)
 
-	// TODO: функция для создания коннекта к базе данных, в migrate прокидывать
 	db := migrate.ConnectToDB(dsn)
 
+	migrate.RunMigrations(db, "cmd/migrate/migrations/000001_init_schema.down.sql")
 	migrate.RunMigrations(db, "cmd/migrate/migrations/000001_init_schema.up.sql")
 
 	defer db.Close()
@@ -38,6 +39,7 @@ func main() {
 
 	http.HandleFunc("/", handler)
 
-	log.Println("Запуск сервера на http://localhost:8080")
-	log.Fatal(http.ListenAndServe("localhost:8081", nil))
+	log.Println("Запуск сервера на http://localhost:5555")
+	log.Fatal(http.ListenAndServe("localhost:5555", nil))
+	//log.Fatal(http.ListenAndServe("0.0.0.0:5555", nil))
 }

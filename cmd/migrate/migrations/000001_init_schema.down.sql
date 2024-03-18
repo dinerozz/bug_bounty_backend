@@ -1,2 +1,5 @@
-drop database if exists bug_bounty;
+-- drop database if exists bug_bounty;
 drop table if exists users;
+drop table if exists teams;
+drop table if exists team_members;
+drop table if exists invites;

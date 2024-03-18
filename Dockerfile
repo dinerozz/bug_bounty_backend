@@ -16,6 +16,8 @@ COPY .env /app/.env
 
 WORKDIR /app
 
+COPY cmd/migrate/migrations /app/cmd/migrate/migrations
+
 COPY --from=BuildStage /myapp /myapp
 
 CMD [ "/myapp" ]
