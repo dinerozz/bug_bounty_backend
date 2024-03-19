@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	db "github.com/dinerozz/bug_bounty_backend/config"
 	"net/http"
 )
 
@@ -55,4 +56,20 @@ func AuthenticateHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"token": token,
 	})
+}
+
+func CurrentUserHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetUserFromJWT(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	user, err := db.GetUserByID(db.Pool, userID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(user)
 }

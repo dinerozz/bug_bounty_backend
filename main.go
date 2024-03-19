@@ -32,10 +32,15 @@ func main() {
 	defer db.Close()
 	fmt.Println("Successfully connected to database!")
 
-	http.HandleFunc("/register", auth.RegisterHandler)
-	http.HandleFunc("/authenticate", auth.AuthenticateHandler)
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/register", auth.RegisterHandler)
+	mux.HandleFunc("/authenticate", auth.AuthenticateHandler)
+	mux.Handle("/current", auth.JWTMiddleware(http.HandlerFunc(auth.CurrentUserHandler)))
+
+	handler := auth.CORSMiddleware(mux)
 
 	log.Println("Запуск сервера на http://localhost:5555")
-	log.Fatal(http.ListenAndServe("localhost:5555", nil))
+	log.Fatal(http.ListenAndServe("localhost:5555", handler))
 	//log.Fatal(http.ListenAndServe("0.0.0.0:5555", nil))
 }

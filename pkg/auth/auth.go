@@ -2,12 +2,15 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"log"
+	"net/http"
+	"strings"
 	"time"
 )
 
@@ -64,4 +67,21 @@ func AuthenticateUser(username, password string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func GetUserFromJWT(r *http.Request) (uuid.UUID, error) {
+	authHeader := r.Header.Get("Authorization")
+
+	authHeaderParts := strings.Split(authHeader, " ")
+
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(authHeaderParts[1], claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		return uuid.Nil, errors.New("Invalid token")
+	}
+
+	return claims.UserID, nil
 }
