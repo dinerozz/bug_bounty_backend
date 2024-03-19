@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
+	"github.com/dinerozz/bug_bounty_backend/pkg/models"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -36,7 +36,7 @@ func RegisterUser(username, email, password string) error {
 	return nil
 }
 
-func AuthenticateUser(username, password string) (string, error) {
+func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 	var userID uuid.UUID
 	var hashedPassword string
 
@@ -44,18 +44,19 @@ func AuthenticateUser(username, password string) (string, error) {
 
 	err := db.Pool.QueryRow(context.Background(), "SELECT id, password FROM users WHERE username = $1", username).Scan(&userID, &hashedPassword)
 	if err != nil {
-		return "", fmt.Errorf("пользователь не найден: %w", err)
+		return nil, fmt.Errorf("пользователь не найден: %w", err)
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)); err != nil {
-		return "", fmt.Errorf("неверный пароль: %w", err)
+		return nil, fmt.Errorf("неверный пароль: %w", err)
 	}
 
-	expirationTime := jwt.NewNumericDate(time.Now().Add(24 * time.Hour))
+	expirationTime := time.Now().Add(24 * time.Hour)
+
 	claims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: expirationTime,
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
 	}
 
@@ -63,25 +64,21 @@ func AuthenticateUser(username, password string) (string, error) {
 	tokenString, err := token.SignedString(jwtKey)
 
 	if err != nil {
-		return "", fmt.Errorf("ошибка при создании токена: %w", err)
+		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
 	}
 
-	return tokenString, nil
+	return &models.AuthResponse{
+		Token:     tokenString,
+		ExpiresAt: expirationTime,
+	}, nil
 }
 
 func GetUserFromJWT(r *http.Request) (uuid.UUID, error) {
-	authHeader := r.Header.Get("Authorization")
+	userIDFromContext := r.Context().Value("userID")
 
-	authHeaderParts := strings.Split(authHeader, " ")
-
-	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(authHeaderParts[1], claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
-
-	if err != nil || !token.Valid {
-		return uuid.Nil, errors.New("Invalid token")
+	if userID, ok := userIDFromContext.(uuid.UUID); ok && userID != uuid.Nil {
+		return userID, nil
+	} else {
+		return uuid.Nil, errors.New("Unable to retrieve user ID from token")
 	}
-
-	return claims.UserID, nil
 }

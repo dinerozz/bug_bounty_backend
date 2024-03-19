@@ -2,30 +2,27 @@ package auth
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"strings"
-
+	"errors"
 	"github.com/golang-jwt/jwt/v4"
+	"net/http"
 )
 
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		fmt.Println(authHeader)
-		if authHeader == "" {
-			http.Error(w, "Authorization header required", http.StatusUnauthorized)
+		c, err := r.Cookie("auth_token")
+		if err != nil {
+			if errors.Is(err, http.ErrNoCookie) {
+				http.Error(w, "Authorization cookie required", http.StatusUnauthorized)
+				return
+			}
+			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
 
-		authHeaderParts := strings.Split(authHeader, " ")
-		if len(authHeaderParts) != 2 || authHeaderParts[0] != "Bearer" {
-			http.Error(w, "Authorization header format must be 'Bearer {token}'", http.StatusUnauthorized)
-			return
-		}
+		tokenString := c.Value
 
 		claims := &Claims{}
-		token, err := jwt.ParseWithClaims(authHeaderParts[1], claims, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		})
 

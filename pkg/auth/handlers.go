@@ -46,15 +46,25 @@ func AuthenticateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := AuthenticateUser(req.Username, req.Password)
+	authResponse, err := AuthenticateUser(req.Username, req.Password)
 	if err != nil {
 		http.Error(w, "Ошибка при аутентификации: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    authResponse.Token,
+		Path:     "/",
+		Expires:  authResponse.ExpiresAt,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
-		"token": token,
+		"message": "Успешная авторизация",
 	})
 }
 
