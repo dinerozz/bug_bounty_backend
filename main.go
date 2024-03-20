@@ -5,6 +5,7 @@ import (
 	"github.com/dinerozz/bug_bounty_backend/cmd/migrate"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/auth"
+	"github.com/dinerozz/bug_bounty_backend/pkg/team"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
@@ -37,6 +38,7 @@ func main() {
 	mux.HandleFunc("/register", auth.RegisterHandler)
 	mux.HandleFunc("/authenticate", auth.AuthenticateHandler)
 	mux.Handle("/current", auth.JWTMiddleware(http.HandlerFunc(auth.CurrentUserHandler)))
+	mux.Handle("/team", auth.JWTMiddleware(http.HandlerFunc(team.CreateTeamHandler)))
 
 	handler := auth.CORSMiddleware(mux)
 

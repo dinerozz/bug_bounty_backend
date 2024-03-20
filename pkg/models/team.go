@@ -1,7 +1,9 @@
 package models
 
+import "github.com/google/uuid"
+
 type Team struct {
 	ID      int
 	Name    string
-	OwnerID int
+	OwnerID uuid.UUID
 }
