@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
@@ -10,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 )
@@ -36,12 +34,15 @@ func RegisterUser(username, email, password string) error {
 }
 
 func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
-	var userID uuid.UUID
-	var hashedPassword string
+	var (
+		userID         uuid.UUID
+		hashedPassword string
+		email          string
+	)
 
 	log.Printf("Попытка аутентификации пользователя: %s", username)
 
-	err := db.Pool.QueryRow(context.Background(), "SELECT id, password FROM users WHERE username = $1", username).Scan(&userID, &hashedPassword)
+	err := db.Pool.QueryRow(context.Background(), "SELECT id, username, email, password FROM users WHERE username = $1", username).Scan(&userID, &username, &email, &hashedPassword)
 	if err != nil {
 		return nil, fmt.Errorf("пользователь не найден: %w", err)
 	}
@@ -50,76 +51,82 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		return nil, fmt.Errorf("неверный пароль: %w", err)
 	}
 
-	expirationTime := time.Now().Add(24 * time.Hour)
+	accessTTL := time.Now().Add(1 * time.Minute)
+	refreshTTL := time.Now().Add(24 * 7 * time.Hour)
 
-	claims := &Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	tokenString, err := GenerateNewToken(*claims)
+	accessToken, refreshToken, err := GenerateTokens(userID)
 
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
 	}
 
 	return &models.AuthResponse{
-		Token:     tokenString,
-		ExpiresAt: expirationTime,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
+		AccessTTL:    accessTTL,
+		RefreshTTL:   refreshTTL,
+		Username:     username,
+		Email:        email,
+		UserID:       userID,
 	}, nil
 }
 
-func Refresh(tokenString string) (*models.AuthResponse, error) {
+func Refresh(refreshToken string) (*models.AuthResponse, error) {
 	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_KEY")), nil
 	})
 
-	if err != nil || !token.Valid {
-		return nil, fmt.Errorf("неверный токен: %w", err)
+	if err != nil || !token.Valid || time.Unix(claims.ExpiresAt.Unix(), 0).Sub(time.Now()) <= 0 {
+		return nil, fmt.Errorf("неверный refresh токен: %w", err)
 	}
 
-	if time.Unix(claims.ExpiresAt.Unix(), 0).Sub(time.Now()) > 0 {
-		return nil, fmt.Errorf("токен еще действителен")
-	}
-
-	expirationTime := time.Now().Add(24 * time.Hour)
-	claims.ExpiresAt = jwt.NewNumericDate(expirationTime) // Обновляем время истечения
-
-	newTokenString, err := GenerateNewToken(*claims)
+	accessTokenStr, refreshTokenStr, err := GenerateTokens(claims.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
 	}
 
+	accessTTL := time.Now().Add(15 * time.Minute)
+	refreshTTL := time.Now().Add(24 * 7 * time.Hour)
+
 	return &models.AuthResponse{
-		Token:     newTokenString,
-		ExpiresAt: expirationTime,
+		Token:        accessTokenStr,
+		RefreshToken: refreshTokenStr,
+		AccessTTL:    accessTTL,
+		RefreshTTL:   refreshTTL,
 	}, nil
 }
 
-func Logout(tokenString string) {
-
-}
-
-func GenerateNewToken(claims Claims) (string, error) {
+func GenerateTokens(userID uuid.UUID) (accessTokenStr, refreshTokenStr string, err error) {
 	jwtKey := []byte(os.Getenv("JWT_KEY"))
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
+	accessExpirationTime := time.Now().Add(1 * time.Minute)
+	accessClaims := &Claims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(accessExpirationTime),
+		},
+	}
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessTokenStr, err = accessToken.SignedString(jwtKey)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return tokenString, nil
-}
 
-func GetUserFromJWT(r *http.Request) (uuid.UUID, error) {
-	userIDFromContext := r.Context().Value("userID")
-
-	if userID, ok := userIDFromContext.(uuid.UUID); ok && userID != uuid.Nil {
-		return userID, nil
-	} else {
-		return uuid.Nil, errors.New("Unable to retrieve user ID from token")
+	refreshExpirationTime := time.Now().Add(24 * time.Hour * 7)
+	refreshClaims := &Claims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(refreshExpirationTime),
+		},
 	}
+
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	refreshTokenStr, err = refreshToken.SignedString(jwtKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessTokenStr, refreshTokenStr, nil
 }

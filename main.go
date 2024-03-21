@@ -38,11 +38,12 @@ func main() {
 
 	router.POST("/register", auth.RegisterHandler)
 	router.POST("/authenticate", auth.AuthenticateHandler)
+	router.GET("/refresh", auth.RefreshHandler)
 
 	authRequired := router.Group("/")
 	authRequired.Use(auth.JWTMiddleware())
 	{
-		authRequired.GET("/refresh", auth.RefreshHandler)
+		authRequired.POST("/logout", auth.LogoutHandler)
 		authRequired.GET("/current", auth.CurrentUserHandler)
 		authRequired.POST("/team", team.CreateTeamHandler)
 	}

@@ -21,8 +21,8 @@ func ConnectToDB(dsn string) *pgxpool.Pool {
 	return Pool
 }
 
-func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.UserById, error) {
-	var user models.UserById
+func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, error) {
+	var user models.CurrentUser
 
 	err := dbPool.QueryRow(context.Background(), "SELECT id, username, email FROM users WHERE id = $1", userID).Scan(&user.ID, &user.Username, &user.Email)
 	if err != nil {

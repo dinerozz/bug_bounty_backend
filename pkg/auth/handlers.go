@@ -30,25 +30,32 @@ func AuthenticateHandler(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный запрос"})
-		return
 	}
 
 	authResponse, err := AuthenticateUser(req.Username, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Ошибка при аутентификации: " + err.Error()})
-		return
 	}
 
-	expiresInSeconds := int(authResponse.ExpiresAt.Sub(time.Now()).Seconds())
-	c.SetCookie("auth_token", authResponse.Token, expiresInSeconds, "/", "", true, true)
+	accessExpiresInSeconds := int(authResponse.AccessTTL.Sub(time.Now()).Seconds())
+	refreshExpiresInSeconds := int(authResponse.RefreshTTL.Sub(time.Now()).Seconds())
 
-	c.JSON(http.StatusOK, gin.H{"message": "Успешная авторизация"})
+	c.SetCookie("auth_token", authResponse.Token, accessExpiresInSeconds, "/", "", true, true)
+	c.SetCookie("refresh_token", authResponse.RefreshToken, refreshExpiresInSeconds, "/", "", true, true)
+
+	response := models.CurrentUser{
+		ID:       authResponse.UserID,
+		Username: authResponse.Username,
+		Email:    authResponse.Email,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func RefreshHandler(c *gin.Context) {
-	cToken, err := c.Cookie("auth_token")
+	cToken, err := c.Cookie("refresh_token")
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Auth token cookie required"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token cookie required"})
 		return
 	}
 
@@ -60,10 +67,20 @@ func RefreshHandler(c *gin.Context) {
 		return
 	}
 
-	expiresInSeconds := int(authResponse.ExpiresAt.Sub(time.Now()).Seconds())
-	c.SetCookie("auth_token", authResponse.Token, expiresInSeconds, "/", "", true, true)
+	accessExpiresInSeconds := int(authResponse.AccessTTL.Sub(time.Now()).Seconds())
+	refreshExpiresInSeconds := int(authResponse.RefreshTTL.Sub(time.Now()).Seconds())
+
+	c.SetCookie("auth_token", authResponse.Token, accessExpiresInSeconds, "/", "", true, true)
+	c.SetCookie("refresh_token", authResponse.RefreshToken, refreshExpiresInSeconds, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Токен обновлен"})
+}
+
+func LogoutHandler(c *gin.Context) {
+	c.SetCookie("auth_token", "", -1, "/", "", true, true)
+	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Вы успешно вышли из системы"})
 }
 
 func CurrentUserHandler(c *gin.Context) {
