@@ -18,3 +18,27 @@ func CreateTeam(team *models.Team) error {
 
 	return nil
 }
+
+func GetTeams() ([]models.Teams, error) {
+	rows, err := db.Pool.Query(context.Background(), "SELECT id, name FROM teams")
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении команд: %w", err)
+	}
+	defer rows.Close()
+
+	var teams []models.Teams
+
+	for rows.Next() {
+		var t models.Teams
+		if err := rows.Scan(&t.ID, &t.Name); err != nil {
+			return nil, fmt.Errorf("ошибка при сканировании команды: %w", err)
+		}
+		teams = append(teams, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("ошибка после итерации по командам: %w", err)
+	}
+
+	return teams, nil
+}

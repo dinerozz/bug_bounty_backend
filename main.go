@@ -46,6 +46,7 @@ func main() {
 		authRequired.POST("/logout", auth.LogoutHandler)
 		authRequired.GET("/current", auth.CurrentUserHandler)
 		authRequired.POST("/team", team.CreateTeamHandler)
+		authRequired.GET("/teams", team.GetTeamsHandler)
 	}
 
 	log.Println("Запуск сервера на http://localhost:5555")

@@ -7,3 +7,8 @@ type Team struct {
 	Name    string
 	OwnerID uuid.UUID
 }
+
+type Teams struct {
+	ID   int
+	Name string
+}

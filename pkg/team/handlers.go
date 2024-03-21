@@ -37,3 +37,16 @@ func CreateTeamHandler(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, newTeam)
 }
+
+func GetTeamsHandler(c *gin.Context) {
+	teams, err := GetTeams()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Произошла ошибка при получении списка команд: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, teams)
+}
