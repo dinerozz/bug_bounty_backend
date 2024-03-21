@@ -1,25 +1,28 @@
 package auth
 
 import (
-	"context"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"net/http"
+	"os"
 )
 
-func JWTMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c, err := r.Cookie("auth_token")
+func JWTMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		jwtKey := []byte(os.Getenv("JWT_KEY"))
+
+		cToken, err := c.Cookie("auth_token")
 		if err != nil {
 			if errors.Is(err, http.ErrNoCookie) {
-				http.Error(w, "Authorization cookie required", http.StatusUnauthorized)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization cookie required"})
 				return
 			}
-			http.Error(w, "Bad request", http.StatusBadRequest)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
 			return
 		}
 
-		tokenString := c.Value
+		tokenString := cToken
 
 		claims := &Claims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -27,11 +30,12 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "userID", claims.UserID)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+		c.Set("userID", claims.UserID)
+
+		c.Next()
+	}
 }

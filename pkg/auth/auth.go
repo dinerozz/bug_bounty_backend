@@ -11,10 +11,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
-
-var jwtKey = []byte("8149694d8d0bfcdddc2c965b2a2f2ba1d4233eb778901ca7882651f291eb828a")
 
 type Claims struct {
 	UserID uuid.UUID `json:"userId"`
@@ -60,8 +59,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
+	tokenString, err := GenerateNewToken(*claims)
 
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
@@ -71,6 +69,49 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		Token:     tokenString,
 		ExpiresAt: expirationTime,
 	}, nil
+}
+
+func Refresh(tokenString string) (*models.AuthResponse, error) {
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_KEY")), nil
+	})
+
+	if err != nil || !token.Valid {
+		return nil, fmt.Errorf("неверный токен: %w", err)
+	}
+
+	if time.Unix(claims.ExpiresAt.Unix(), 0).Sub(time.Now()) > 0 {
+		return nil, fmt.Errorf("токен еще действителен")
+	}
+
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims.ExpiresAt = jwt.NewNumericDate(expirationTime) // Обновляем время истечения
+
+	newTokenString, err := GenerateNewToken(*claims)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
+	}
+
+	return &models.AuthResponse{
+		Token:     newTokenString,
+		ExpiresAt: expirationTime,
+	}, nil
+}
+
+func Logout(tokenString string) {
+
+}
+
+func GenerateNewToken(claims Claims) (string, error) {
+	jwtKey := []byte(os.Getenv("JWT_KEY"))
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
 }
 
 func GetUserFromJWT(r *http.Request) (uuid.UUID, error) {

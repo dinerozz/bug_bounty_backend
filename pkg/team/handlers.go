@@ -1,36 +1,39 @@
 package team
 
 import (
-	"encoding/json"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
 )
 
-func CreateTeamHandler(w http.ResponseWriter, r *http.Request) {
+func CreateTeamHandler(c *gin.Context) {
 	var newTeam models.Team
-	if err := json.NewDecoder(r.Body).Decode(&newTeam); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	if err := c.ShouldBindJSON(&newTeam); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	userIdFromContext := r.Context().Value("userID")
-	userID, ok := userIdFromContext.(uuid.UUID)
+	userIDInterface, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Could not find user ID"})
+		return
+	}
 
+	userID, ok := userIDInterface.(uuid.UUID)
 	if !ok {
-		http.Error(w, "Could not find user ID", http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID format is incorrect"})
 		return
 	}
 
 	newTeam.OwnerID = userID
 
 	err := CreateTeam(&newTeam)
-
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(newTeam)
+	c.JSON(http.StatusCreated, newTeam)
 }

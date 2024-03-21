@@ -1,85 +1,89 @@
 package auth
 
 import (
-	"encoding/json"
 	db "github.com/dinerozz/bug_bounty_backend/config"
+	"github.com/dinerozz/bug_bounty_backend/pkg/models"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"net/http"
+	"time"
 )
 
-func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
+func RegisterHandler(c *gin.Context) {
+	var req models.RegisterBody
 
-	var req struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Некорректный запрос", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный запрос"})
 		return
 	}
 
 	if err := RegisterUser(req.Username, req.Email, req.Password); err != nil {
-		http.Error(w, "Ошибка при регистрации: "+err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при регистрации: " + err.Error()})
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode("Пользователь " + req.Username + " успешно зарегистрирован")
+	c.JSON(http.StatusCreated, gin.H{"message": "Пользователь " + req.Username + " успешно зарегистрирован"})
 }
 
-func AuthenticateHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
+func AuthenticateHandler(c *gin.Context) {
+	var req models.AuthBody
 
-	var req struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Некорректный запрос", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный запрос"})
 		return
 	}
 
 	authResponse, err := AuthenticateUser(req.Username, req.Password)
 	if err != nil {
-		http.Error(w, "Ошибка при аутентификации: "+err.Error(), http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Ошибка при аутентификации: " + err.Error()})
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
-		Value:    authResponse.Token,
-		Path:     "/",
-		Expires:  authResponse.ExpiresAt,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	expiresInSeconds := int(authResponse.ExpiresAt.Sub(time.Now()).Seconds())
+	c.SetCookie("auth_token", authResponse.Token, expiresInSeconds, "/", "", true, true)
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Успешная авторизация",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Успешная авторизация"})
 }
 
-func CurrentUserHandler(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserFromJWT(r)
+func RefreshHandler(c *gin.Context) {
+	cToken, err := c.Cookie("auth_token")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Auth token cookie required"})
 		return
 	}
 
-	user, err := db.GetUserByID(db.Pool, userID)
+	tokenString := cToken
+
+	authResponse, err := Refresh(tokenString)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	json.NewEncoder(w).Encode(user)
+	expiresInSeconds := int(authResponse.ExpiresAt.Sub(time.Now()).Seconds())
+	c.SetCookie("auth_token", authResponse.Token, expiresInSeconds, "/", "", true, true)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Токен обновлен"})
+}
+
+func CurrentUserHandler(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userIDStr, ok := userID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "UserID type assertion failed"})
+		return
+	}
+
+	user, err := db.GetUserByID(db.Pool, userIDStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }

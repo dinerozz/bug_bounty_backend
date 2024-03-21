@@ -6,13 +6,16 @@ import (
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/auth"
 	"github.com/dinerozz/bug_bounty_backend/pkg/team"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"log"
-	"net/http"
 	"os"
 )
 
 func main() {
+	router := gin.Default()
+	router.Use(auth.CORSMiddleware())
+
 	godotenv.Load(".env")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
@@ -33,16 +36,17 @@ func main() {
 	defer db.Close()
 	fmt.Println("Successfully connected to database!")
 
-	mux := http.NewServeMux()
+	router.POST("/register", auth.RegisterHandler)
+	router.POST("/authenticate", auth.AuthenticateHandler)
 
-	mux.HandleFunc("/register", auth.RegisterHandler)
-	mux.HandleFunc("/authenticate", auth.AuthenticateHandler)
-	mux.Handle("/current", auth.JWTMiddleware(http.HandlerFunc(auth.CurrentUserHandler)))
-	mux.Handle("/team", auth.JWTMiddleware(http.HandlerFunc(team.CreateTeamHandler)))
-
-	handler := auth.CORSMiddleware(mux)
+	authRequired := router.Group("/")
+	authRequired.Use(auth.JWTMiddleware())
+	{
+		authRequired.GET("/refresh", auth.RefreshHandler)
+		authRequired.GET("/current", auth.CurrentUserHandler)
+		authRequired.POST("/team", team.CreateTeamHandler)
+	}
 
 	log.Println("Запуск сервера на http://localhost:5555")
-	log.Fatal(http.ListenAndServe("localhost:5555", handler))
-	//log.Fatal(http.ListenAndServe("0.0.0.0:5555", nil))
+	router.Run(":5555")
 }
