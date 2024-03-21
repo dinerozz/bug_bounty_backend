@@ -51,7 +51,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		return nil, fmt.Errorf("неверный пароль: %w", err)
 	}
 
-	accessTTL := time.Now().Add(1 * time.Minute)
+	accessTTL := time.Now().Add(15 * time.Minute)
 	refreshTTL := time.Now().Add(24 * 7 * time.Hour)
 
 	accessToken, refreshToken, err := GenerateTokens(userID)
@@ -100,7 +100,7 @@ func Refresh(refreshToken string) (*models.AuthResponse, error) {
 func GenerateTokens(userID uuid.UUID) (accessTokenStr, refreshTokenStr string, err error) {
 	jwtKey := []byte(os.Getenv("JWT_KEY"))
 
-	accessExpirationTime := time.Now().Add(1 * time.Minute)
+	accessExpirationTime := time.Now().Add(15 * time.Minute)
 	accessClaims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
