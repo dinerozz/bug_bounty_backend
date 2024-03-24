@@ -82,3 +82,38 @@ func UpdateInviteTokenHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"invite_token": inviteToken})
 }
+
+func JoinTeamHandler(c *gin.Context) {
+	userIDInterface, ok := c.Get("userID")
+
+	type JoinTeamRequest struct {
+		InviteToken string `json:"invite_token"`
+	}
+
+	var request JoinTeamRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, _ := userIDInterface.(uuid.UUID)
+
+	err := JoinTeam(models.TeamMember{
+		UserID:      userID,
+		InviteToken: request.InviteToken,
+	})
+
+	if err != nil {
+		fmt.Println("АШЫБКА", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "произошла ошибка при присоединении к команде"})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
+}

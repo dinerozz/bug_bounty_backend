@@ -48,8 +48,9 @@ func main() {
 		authRequired.POST("/team", team.CreateTeamHandler)
 		authRequired.GET("/teams", team.GetTeamsHandler)
 		authRequired.PATCH("/team/invite-token", team.UpdateInviteTokenHandler)
+		authRequired.POST("/team/join", team.JoinTeamHandler)
 	}
 
 	log.Println("Запуск сервера на http://localhost:5555")
-	router.Run(":5555")
+	router.Run("localhost:5555")
 }

@@ -13,3 +13,8 @@ type Teams struct {
 	ID   int
 	Name string
 }
+
+type TeamMember struct {
+	UserID      uuid.UUID `json:"id"`
+	InviteToken string    `json:"invite_token"`
+}

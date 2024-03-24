@@ -61,6 +61,23 @@ func GetTeams() ([]models.Teams, error) {
 	return teams, nil
 }
 
+func JoinTeam(member models.TeamMember) error {
+	var teamID int
+
+	fmt.Println("member", member)
+	err := db.Pool.QueryRow(context.Background(), "SELECT id FROM teams WHERE invite_token = $1", member.InviteToken).Scan(&teamID)
+	if err != nil {
+		return fmt.Errorf("ошибка при проверке токена: %w", err)
+	}
+
+	_, err = db.Pool.Exec(context.Background(), "INSERT INTO team_members (team_id, user_id) VALUES ($1, $2)", teamID, member.UserID)
+	if err != nil {
+		return fmt.Errorf("ошибка при присоединении к команде: %w", err)
+	}
+
+	return nil
+}
+
 func generateRandomString(length int) (string, error) {
 	bytesLength := (length * 3) / 4
 
