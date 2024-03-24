@@ -9,8 +9,9 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS teams (
                        id SERIAL PRIMARY KEY,
-                       name VARCHAR(255) UNIQUE NOT NULL,
-                       owner_id UUID REFERENCES users(id)
+                       name VARCHAR(255) UNIQUE,
+                       owner_id UUID UNIQUE REFERENCES users(id),
+                       invite_token VARCHAR(255) UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS team_members (

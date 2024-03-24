@@ -1,6 +1,7 @@
 package team
 
 import (
+	"fmt"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -27,9 +28,16 @@ func CreateTeamHandler(c *gin.Context) {
 		return
 	}
 
-	newTeam.OwnerID = userID
+	newTeam.OwnerID = &userID
 
 	err := CreateTeam(&newTeam)
+
+	if len(*newTeam.Name) < 2 {
+		fmt.Println(newTeam.Name)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Слишком короткое название команды"})
+		return
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

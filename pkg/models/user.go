@@ -13,4 +13,5 @@ type CurrentUser struct {
 	ID       uuid.UUID `json:"id"`
 	Username string    `json:"username"`
 	Email    string    `json:"email"`
+	Team     *Team     `json:"team,omitempty"`
 }

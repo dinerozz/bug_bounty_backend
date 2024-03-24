@@ -5,8 +5,10 @@ import (
 	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
+	_ "github.com/dinerozz/bug_bounty_backend/pkg/team"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
@@ -38,11 +40,12 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		userID         uuid.UUID
 		hashedPassword string
 		email          string
+		team           models.Team
 	)
 
 	log.Printf("Попытка аутентификации пользователя: %s", username)
 
-	err := db.Pool.QueryRow(context.Background(), "SELECT id, username, email, password FROM users WHERE username = $1", username).Scan(&userID, &username, &email, &hashedPassword)
+	err := db.Pool.QueryRow(context.Background(), "SELECT u.id, u.username, u.email, u.password, t.name, t.id, t.owner_id, t.invite_token FROM users u LEFT JOIN teams t on u.id = t.owner_id WHERE u.username = $1", username).Scan(&userID, &username, &email, &hashedPassword, &team.Name, &team.ID, &team.OwnerID, &team.InviteToken)
 	if err != nil {
 		return nil, fmt.Errorf("пользователь не найден: %w", err)
 	}
@@ -68,6 +71,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		Username:     username,
 		Email:        email,
 		UserID:       userID,
+		Team:         team,
 	}, nil
 }
 
@@ -129,4 +133,29 @@ func GenerateTokens(userID uuid.UUID) (accessTokenStr, refreshTokenStr string, e
 	}
 
 	return accessTokenStr, refreshTokenStr, nil
+}
+
+func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, error) {
+	var user models.CurrentUser
+	var team models.Team
+
+	err := dbPool.QueryRow(context.Background(), "SELECT u.id, u.username, u.email, t.name, t.id, t.owner_id, t.invite_token FROM users u LEFT JOIN teams t ON u.id = t.owner_id WHERE u.id = $1",
+		userID).Scan(&user.ID, &user.Username, &user.Email, &team.Name, &team.ID, &team.OwnerID, &team.InviteToken)
+
+	if err != nil {
+		return nil, fmt.Errorf("error fetching user from database: %w", err)
+	}
+
+	if team.ID != nil {
+		user.Team = &models.Team{
+			Name:        team.Name,
+			ID:          team.ID,
+			OwnerID:     team.OwnerID,
+			InviteToken: team.InviteToken,
+		}
+	} else {
+		user.Team = nil
+	}
+
+	return &user, nil
 }

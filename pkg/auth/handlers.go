@@ -34,7 +34,7 @@ func AuthenticateHandler(c *gin.Context) {
 
 	authResponse, err := AuthenticateUser(req.Username, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Ошибка при аутентификации: " + err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "Ошибка при аутентификации: " + err.Error()})
 	}
 
 	accessExpiresInSeconds := int(authResponse.AccessTTL.Sub(time.Now()).Seconds())
@@ -47,6 +47,7 @@ func AuthenticateHandler(c *gin.Context) {
 		ID:       authResponse.UserID,
 		Username: authResponse.Username,
 		Email:    authResponse.Email,
+		Team:     &authResponse.Team,
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -86,19 +87,20 @@ func LogoutHandler(c *gin.Context) {
 func CurrentUserHandler(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized"})
 		return
 	}
 
 	userIDStr, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "UserID type assertion failed"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "UserID type assertion failed"})
 		return
 	}
 
-	user, err := db.GetUserByID(db.Pool, userIDStr)
+	user, err := GetUserByID(db.Pool, userIDStr)
+
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
