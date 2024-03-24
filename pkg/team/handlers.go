@@ -58,3 +58,28 @@ func GetTeamsHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, teams)
 }
+
+func UpdateInviteTokenHandler(c *gin.Context) {
+	userIDInterface, ok := c.Get("userID")
+
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, ok := userIDInterface.(uuid.UUID)
+
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "UserID type assertion failed"})
+		return
+	}
+
+	inviteToken, err := UpdateInviteToken(userID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "произошла ошибка при обновлении токена"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"invite_token": inviteToken})
+}

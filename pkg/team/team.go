@@ -7,6 +7,7 @@ import (
 	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
+	"github.com/google/uuid"
 )
 
 func CreateTeam(team *models.Team) (*models.Team, error) {
@@ -22,6 +23,18 @@ func CreateTeam(team *models.Team) (*models.Team, error) {
 		return nil, fmt.Errorf("ошибка при создании команды: %w", err)
 	}
 	return team, nil
+}
+
+func UpdateInviteToken(userID uuid.UUID) (*string, error) {
+	inviteToken, _ := generateRandomString(32)
+
+	err := db.Pool.QueryRow(context.Background(), "UPDATE teams SET invite_token = $1 WHERE owner_id = $2 returning invite_token", inviteToken, userID).Scan(&inviteToken)
+
+	if err != nil {
+		return nil, fmt.Errorf("произошла ошибка при обновлении токена: %w", err)
+	}
+
+	return &inviteToken, nil
 }
 
 func GetTeams() ([]models.Teams, error) {
