@@ -8,6 +8,7 @@ import (
 	"log"
 )
 
+// TODO REFACTOR (DI)
 var Pool *pgxpool.Pool
 
 func ConnectToDB(dsn string) *pgxpool.Pool {
