@@ -30,10 +30,10 @@ func CreateTeamHandler(c *gin.Context) {
 
 	newTeam.OwnerID = &userID
 
-	err := CreateTeam(&newTeam)
+	team, err := CreateTeam(&newTeam)
 
-	if len(*newTeam.Name) < 2 {
-		fmt.Println(newTeam.Name)
+	if len(*team.Name) < 2 {
+		fmt.Println(team.Name)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Слишком короткое название команды"})
 		return
 	}
@@ -43,7 +43,7 @@ func CreateTeamHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, newTeam)
+	c.JSON(http.StatusCreated, team)
 }
 
 func GetTeamsHandler(c *gin.Context) {

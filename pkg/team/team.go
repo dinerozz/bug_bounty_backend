@@ -7,22 +7,21 @@ import (
 	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
-	"github.com/google/uuid"
 )
 
-func CreateTeam(team *models.Team) error {
+func CreateTeam(team *models.Team) (*models.Team, error) {
 	inviteToken, _ := generateRandomString(32)
-	fmt.Println(inviteToken)
+
+	team.InviteToken = &inviteToken
 
 	err := db.Pool.QueryRow(context.Background(),
 		"INSERT INTO teams (name, owner_id, invite_token) VALUES ($1, $2, $3) RETURNING id, invite_token",
 		team.Name, team.OwnerID, inviteToken).Scan(&team.ID, &inviteToken)
 
 	if err != nil {
-		return fmt.Errorf("ошибка при создании команды: %w", err)
+		return nil, fmt.Errorf("ошибка при создании команды: %w", err)
 	}
-
-	return nil
+	return team, nil
 }
 
 func GetTeams() ([]models.Teams, error) {
@@ -47,22 +46,6 @@ func GetTeams() ([]models.Teams, error) {
 	}
 
 	return teams, nil
-}
-
-func GetTeamByOwner(userID uuid.UUID) (models.Team, error) {
-	var team models.Team
-
-	err := db.Pool.QueryRow(context.Background(), "SELECT * FROM teams WHERE owner_id = $1", userID).Scan(
-		&team.ID,
-		&team.Name,
-		&team.OwnerID,
-	)
-
-	if err != nil {
-		return models.Team{}, err
-	}
-
-	return team, nil
 }
 
 func generateRandomString(length int) (string, error) {
