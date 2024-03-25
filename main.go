@@ -6,6 +6,7 @@ import (
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/auth"
 	"github.com/dinerozz/bug_bounty_backend/pkg/role"
+	"github.com/dinerozz/bug_bounty_backend/pkg/task"
 	"github.com/dinerozz/bug_bounty_backend/pkg/team"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -59,6 +60,7 @@ func main() {
 	{
 		adminRoutes.POST("/role", role.CreateRoleHandler)
 		adminRoutes.POST("/user/role", role.SetUserRoleHandler)
+		adminRoutes.POST("/tasks", task.CreateTaskHandler)
 	}
 
 	log.Println("Запуск сервера на http://localhost:5555")

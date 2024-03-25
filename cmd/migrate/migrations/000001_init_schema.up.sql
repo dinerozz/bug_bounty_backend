@@ -41,3 +41,11 @@ CREATE TABLE IF NOT EXISTS invites (
                          token VARCHAR(255) UNIQUE NOT NULL,
                          expires_at TIMESTAMP NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    author_id UUID references users(id),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    title VARCHAR(255),
+    task_description TEXT
+);
