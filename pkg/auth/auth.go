@@ -59,7 +59,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		return nil, fmt.Errorf("неверный пароль: %w", err)
 	}
 
-	accessTTL := time.Now().Add(15 * time.Minute)
+	accessTTL := time.Now().Add(60 * time.Minute)
 	refreshTTL := time.Now().Add(24 * 7 * time.Hour)
 
 	accessToken, refreshToken, err := GenerateTokens(UserID)
@@ -92,7 +92,7 @@ func Refresh(refreshToken string) (*models.AuthResponse, error) {
 		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
 	}
 
-	accessTTL := time.Now().Add(15 * time.Minute)
+	accessTTL := time.Now().Add(60 * time.Minute)
 	refreshTTL := time.Now().Add(24 * 7 * time.Hour)
 
 	return &models.AuthResponse{

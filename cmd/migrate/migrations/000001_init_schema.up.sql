@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
 CREATE TABLE IF NOT EXISTS teams (
                        id SERIAL PRIMARY KEY,
                        name VARCHAR(255) UNIQUE,
+                       description VARCHAR(255),
                        owner_id UUID UNIQUE REFERENCES users(id),
                        invite_token VARCHAR(255) UNIQUE,
                        points INTEGER

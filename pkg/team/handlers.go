@@ -137,3 +137,29 @@ func GetTeamMembersHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
 }
+
+func GetTeamHandler(c *gin.Context) {
+	var team *models.Team
+
+	userIDInterface, ok := c.Get("userID")
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID, _ := userIDInterface.(uuid.UUID)
+
+	team, err := GetTeam(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "вы не состоите в команде"})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.Team{
+		ID:          team.ID,
+		Name:        team.Name,
+		OwnerID:     team.OwnerID,
+		Description: team.Description,
+		Points:      team.Points,
+		TeamMembers: team.TeamMembers,
+	})
+}

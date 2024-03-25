@@ -5,6 +5,7 @@ import (
 	"github.com/dinerozz/bug_bounty_backend/cmd/migrate"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/auth"
+	"github.com/dinerozz/bug_bounty_backend/pkg/role"
 	"github.com/dinerozz/bug_bounty_backend/pkg/team"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -50,6 +51,8 @@ func main() {
 		authRequired.PATCH("/team/invite-token", team.UpdateInviteTokenHandler)
 		authRequired.POST("/team/join", team.JoinTeamHandler)
 		authRequired.GET("/team/members", team.GetTeamMembersHandler)
+		authRequired.POST("/role", role.CreateRoleHandler)
+		authRequired.GET("/my-team", team.GetTeamHandler)
 	}
 
 	log.Println("Запуск сервера на http://localhost:5555")

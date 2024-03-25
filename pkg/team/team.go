@@ -44,6 +44,27 @@ func UpdateInviteToken(userID uuid.UUID) (*string, error) {
 	return &inviteToken, nil
 }
 
+func GetTeam(userID uuid.UUID) (*models.Team, error) {
+	var team models.Team
+	var members []models.Member
+
+	err := db.Pool.QueryRow(context.Background(),
+		"SELECT t.id, t.name, t.owner_id, t.description, t.points FROM teams t LEFT JOIN team_members tm on t.id = tm.team_id WHERE tm.user_id = $1",
+		userID).Scan(&team.ID, &team.Name, &team.OwnerID, &team.Description, &team.Points)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить информацию по команде: %w", err)
+	}
+
+	members, err = GetTeamMembers(userID)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить участников команды: %w", err)
+	}
+
+	team.TeamMembers = members
+
+	return &team, nil
+}
+
 func GetTeams() ([]models.Teams, error) {
 	rows, err := db.Pool.Query(context.Background(), "SELECT id, name FROM teams")
 	if err != nil {

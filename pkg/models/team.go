@@ -5,14 +5,18 @@ import "github.com/google/uuid"
 type Team struct {
 	ID          *int       `json:"id"`
 	Name        *string    `json:"name"`
+	Description *string    `json:"description"`
+	Points      *int       `json:"points"`
 	OwnerID     *uuid.UUID `json:"owner_id"`
 	InviteToken *string    `json:"invite_token"`
 	TeamMembers []Member   `json:"members"`
 }
 
 type Teams struct {
-	ID   int
-	Name string
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Points      int    `json:"points"`
 }
 
 type JoinTeam struct {
