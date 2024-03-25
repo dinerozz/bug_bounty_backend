@@ -16,5 +16,19 @@ func CreateRole(role models.Role) (*models.Role, error) {
 
 	}
 
+	db.Close()
+
 	return &newRole, nil
+}
+
+func SetUserRole(request models.UserRole) error {
+	_, err := db.Pool.Exec(context.Background(), "INSERT INTO user_roles (user_id, role_id) SELECT $1, id from roles WHERE roles.name = $2", request.UserID, request.Role)
+	if err != nil {
+		fmt.Println("error", err)
+		return fmt.Errorf("произошла ошибка при выдаче роли: %w", err)
+	}
+
+	db.Close()
+
+	return nil
 }

@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
-    id UUID REFERENCES roles(id),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    role_id UUID REFERENCES roles(id),
     user_id UUID REFERENCES users(id)
 );
 

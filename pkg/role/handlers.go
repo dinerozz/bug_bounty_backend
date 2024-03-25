@@ -27,3 +27,24 @@ func CreateRoleHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, role)
 }
+
+func SetUserRoleHandler(c *gin.Context) {
+	var request models.UserRole
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := SetUserRole(models.UserRole{
+		UserID: request.UserID,
+		Role:   request.Role,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось установить роль"})
+		return
+	}
+
+	c.JSON(http.StatusOK, request)
+}
