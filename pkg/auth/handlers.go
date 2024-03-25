@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
 	"github.com/gin-gonic/gin"
@@ -37,6 +38,8 @@ func AuthenticateHandler(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Ошибка при аутентификации: " + err.Error()})
 	}
 
+	fmt.Println("auth response", authResponse.User.Team)
+
 	accessExpiresInSeconds := int(authResponse.AccessTTL.Sub(time.Now()).Seconds())
 	refreshExpiresInSeconds := int(authResponse.RefreshTTL.Sub(time.Now()).Seconds())
 
@@ -44,10 +47,10 @@ func AuthenticateHandler(c *gin.Context) {
 	c.SetCookie("refresh_token", authResponse.RefreshToken, refreshExpiresInSeconds, "/", "", true, true)
 
 	response := models.CurrentUser{
-		ID:       authResponse.UserID,
-		Username: authResponse.Username,
-		Email:    authResponse.Email,
-		Team:     &authResponse.Team,
+		Username: authResponse.User.Username,
+		ID:       authResponse.User.ID,
+		Email:    authResponse.User.Email,
+		Team:     authResponse.User.Team,
 	}
 
 	c.JSON(http.StatusOK, response)

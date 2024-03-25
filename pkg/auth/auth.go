@@ -38,27 +38,31 @@ func RegisterUser(username, email, password string) error {
 
 func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 	var (
-		userID         uuid.UUID
-		hashedPassword string
-		email          string
-		team           models.Team
+		UserID         uuid.UUID
+		HashedPassword string
+		Email          string
+		Team           models.Team
 	)
+
+	var user *models.CurrentUser
 
 	log.Printf("Попытка аутентификации пользователя: %s", username)
 
-	err := db.Pool.QueryRow(context.Background(), "SELECT u.id, u.username, u.email, u.password, t.name, t.id, t.owner_id, t.invite_token FROM users u LEFT JOIN teams t on u.id = t.owner_id WHERE u.username = $1", username).Scan(&userID, &username, &email, &hashedPassword, &team.Name, &team.ID, &team.OwnerID, &team.InviteToken)
+	err := db.Pool.QueryRow(context.Background(), "SELECT u.id, u.username, u.email, u.password, t.name, t.id, t.owner_id, t.invite_token FROM users u LEFT JOIN teams t on u.id = t.owner_id WHERE u.username = $1", username).Scan(&UserID, &username, &Email, &HashedPassword, &Team.Name, &Team.ID, &Team.OwnerID, &Team.InviteToken)
 	if err != nil {
 		return nil, fmt.Errorf("пользователь не найден: %w", err)
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)); err != nil {
+	user, _ = GetUserByID(db.Pool, UserID)
+
+	if err = bcrypt.CompareHashAndPassword([]byte(HashedPassword), []byte(password)); err != nil {
 		return nil, fmt.Errorf("неверный пароль: %w", err)
 	}
 
 	accessTTL := time.Now().Add(15 * time.Minute)
 	refreshTTL := time.Now().Add(24 * 7 * time.Hour)
 
-	accessToken, refreshToken, err := GenerateTokens(userID)
+	accessToken, refreshToken, err := GenerateTokens(UserID)
 
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
@@ -69,10 +73,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		RefreshToken: refreshToken,
 		AccessTTL:    accessTTL,
 		RefreshTTL:   refreshTTL,
-		Username:     username,
-		Email:        email,
-		UserID:       userID,
-		Team:         team,
+		User:         user,
 	}, nil
 }
 
