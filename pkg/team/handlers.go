@@ -104,7 +104,7 @@ func JoinTeamHandler(c *gin.Context) {
 
 	userID, _ := userIDInterface.(uuid.UUID)
 
-	err := JoinTeam(models.TeamMember{
+	err := JoinTeam(models.JoinTeam{
 		UserID:      userID,
 		InviteToken: request.InviteToken,
 	})
@@ -116,4 +116,24 @@ func JoinTeamHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, nil)
+}
+
+func GetTeamMembersHandler(c *gin.Context) {
+	userIDInterface, ok := c.Get("userID")
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, _ := userIDInterface.(uuid.UUID)
+
+	_, err := GetTeamMembers(userID)
+
+	if err != nil {
+		fmt.Println("err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }

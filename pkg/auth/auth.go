@@ -6,6 +6,7 @@ import (
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
 	_ "github.com/dinerozz/bug_bounty_backend/pkg/team"
+	team2 "github.com/dinerozz/bug_bounty_backend/pkg/team"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -138,13 +139,35 @@ func GenerateTokens(userID uuid.UUID) (accessTokenStr, refreshTokenStr string, e
 func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, error) {
 	var user models.CurrentUser
 	var team models.Team
+	var members []models.Member
 
-	err := dbPool.QueryRow(context.Background(), "SELECT u.id, u.username, u.email, t.name, t.id, t.owner_id, t.invite_token FROM users u LEFT JOIN teams t ON u.id = t.owner_id WHERE u.id = $1",
-		userID).Scan(&user.ID, &user.Username, &user.Email, &team.Name, &team.ID, &team.OwnerID, &team.InviteToken)
+	err := dbPool.QueryRow(context.Background(), `
+    SELECT
+      u.id,
+      u.username,
+      u.email,
+      t.name,
+      t.id AS team_id,
+      t.owner_id,
+      CASE WHEN u.id = t.owner_id THEN t.invite_token ELSE NULL END AS invite_token
+    FROM
+      users u
+    LEFT JOIN
+      team_members tm ON u.id = tm.user_id
+    LEFT JOIN
+      teams t ON tm.team_id = t.id OR u.id = t.owner_id
+    WHERE
+      u.id = $1`, userID).Scan(&user.ID, &user.Username, &user.Email, &team.Name, &team.ID, &team.OwnerID, &team.InviteToken)
 
 	if err != nil {
 		return nil, fmt.Errorf("error fetching user from database: %w", err)
 	}
+
+	if team.OwnerID != nil && *team.OwnerID != user.ID {
+		team.InviteToken = nil
+	}
+
+	fmt.Println("TEAMID", team.ID)
 
 	if team.ID != nil {
 		user.Team = &models.Team{
@@ -152,7 +175,16 @@ func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, e
 			ID:          team.ID,
 			OwnerID:     team.OwnerID,
 			InviteToken: team.InviteToken,
+			TeamMembers: []models.Member{},
 		}
+
+		members, err = team2.GetTeamMembers(userID)
+		fmt.Println(members)
+		if err != nil {
+			return nil, fmt.Errorf("ошибка при получении участников команды: %w", err)
+		}
+
+		user.Team.TeamMembers = members
 	} else {
 		user.Team = nil
 	}

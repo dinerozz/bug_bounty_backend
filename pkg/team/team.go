@@ -22,6 +22,13 @@ func CreateTeam(team *models.Team) (*models.Team, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании команды: %w", err)
 	}
+
+	_, err = db.Pool.Exec(context.Background(), "INSERT INTO team_members (team_id, user_id) VALUES ($1, $2)", team.ID, team.OwnerID)
+
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при добавлении owner в команду: %w", err)
+	}
+
 	return team, nil
 }
 
@@ -61,7 +68,7 @@ func GetTeams() ([]models.Teams, error) {
 	return teams, nil
 }
 
-func JoinTeam(member models.TeamMember) error {
+func JoinTeam(member models.JoinTeam) error {
 	var teamID int
 
 	fmt.Println("member", member)
@@ -76,6 +83,31 @@ func JoinTeam(member models.TeamMember) error {
 	}
 
 	return nil
+}
+
+func GetTeamMembers(userID uuid.UUID) ([]models.Member, error) {
+	var members []models.Member
+
+	rows, err := db.Pool.Query(context.Background(),
+		"SELECT u.id, u.username FROM users u JOIN team_members tm ON u.id = tm.user_id WHERE tm.team_id IN (SELECT team_id FROM team_members WHERE user_id = $1);", userID)
+	if err != nil {
+		fmt.Errorf("ошибка при получении участников команды: %w", err)
+		return nil, nil
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var t models.Member
+		if err := rows.Scan(&t.ID, &t.Username); err != nil {
+			return nil, fmt.Errorf("ошибка при сканировании команды: %w", err)
+		}
+		members = append(members, t)
+	}
+
+	fmt.Println("members", members)
+
+	return members, nil
 }
 
 func generateRandomString(length int) (string, error) {
