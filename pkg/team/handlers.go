@@ -146,6 +146,7 @@ func GetTeamHandler(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized"})
 		return
 	}
+
 	userID, _ := userIDInterface.(uuid.UUID)
 
 	team, err := GetTeam(userID)

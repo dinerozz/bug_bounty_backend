@@ -16,7 +16,7 @@ type Teams struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Points      int    `json:"points"`
+	Points      *int   `json:"points"`
 }
 
 type JoinTeam struct {
@@ -27,4 +27,5 @@ type JoinTeam struct {
 type Member struct {
 	ID       uuid.UUID `json:"id"'`
 	Username string    `json:"username"'`
+	Points   *int      `json:"points"`
 }

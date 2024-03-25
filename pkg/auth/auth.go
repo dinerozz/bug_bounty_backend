@@ -146,6 +146,7 @@ func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, e
     SELECT
       u.id,
       u.username,
+      u.points,
       u.email,
       t.name,
       t.id AS team_id,
@@ -158,7 +159,7 @@ func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, e
     LEFT JOIN
       teams t ON tm.team_id = t.id OR u.id = t.owner_id
     WHERE
-      u.id = $1`, userID).Scan(&user.ID, &user.Username, &user.Email, &team.Name, &team.ID, &team.OwnerID, &team.InviteToken)
+      u.id = $1`, userID).Scan(&user.ID, &user.Username, &user.Points, &user.Email, &team.Name, &team.ID, &team.OwnerID, &team.InviteToken)
 
 	if err != nil {
 		return nil, fmt.Errorf("error fetching user from database: %w", err)

@@ -110,7 +110,7 @@ func GetTeamMembers(userID uuid.UUID) ([]models.Member, error) {
 	var members []models.Member
 
 	rows, err := db.Pool.Query(context.Background(),
-		"SELECT u.id, u.username FROM users u JOIN team_members tm ON u.id = tm.user_id WHERE tm.team_id IN (SELECT team_id FROM team_members WHERE user_id = $1);", userID)
+		"SELECT u.id, u.username, u.points FROM users u JOIN team_members tm ON u.id = tm.user_id WHERE tm.team_id IN (SELECT team_id FROM team_members WHERE user_id = $1);", userID)
 	if err != nil {
 		fmt.Errorf("ошибка при получении участников команды: %w", err)
 		return nil, nil
@@ -120,7 +120,7 @@ func GetTeamMembers(userID uuid.UUID) ([]models.Member, error) {
 
 	for rows.Next() {
 		var t models.Member
-		if err := rows.Scan(&t.ID, &t.Username); err != nil {
+		if err := rows.Scan(&t.ID, &t.Username, &t.Points); err != nil {
 			return nil, fmt.Errorf("ошибка при сканировании команды: %w", err)
 		}
 		members = append(members, t)
