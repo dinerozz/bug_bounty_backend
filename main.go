@@ -52,8 +52,13 @@ func main() {
 		authRequired.POST("/team/join", team.JoinTeamHandler)
 		authRequired.GET("/team/members", team.GetTeamMembersHandler)
 		authRequired.GET("/my-team", team.GetTeamHandler)
-		authRequired.POST("/role", role.CreateRoleHandler)
-		authRequired.POST("/user/role", role.SetUserRoleHandler)
+	}
+
+	adminRoutes := router.Group("/admin")
+	adminRoutes.Use(auth.JWTMiddleware(), role.RolesMiddleware("ADMIN"))
+	{
+		adminRoutes.POST("/role", role.CreateRoleHandler)
+		adminRoutes.POST("/user/role", role.SetUserRoleHandler)
 	}
 
 	log.Println("Запуск сервера на http://localhost:5555")
