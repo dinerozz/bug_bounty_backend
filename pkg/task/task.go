@@ -24,3 +24,23 @@ func CreateTask(userID uuid.UUID, task models.Task) (*models.Task, error) {
 		Description: task.Description,
 		IsActive:    task.IsActive}, nil
 }
+
+func GetTasks() ([]models.Task, error) {
+	rows, err := db.Pool.Query(context.Background(), "SELECT id, title, task_description, is_active, author_id FROM tasks")
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении задач: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []models.Task
+
+	for rows.Next() {
+		var t models.Task
+		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &t.IsActive, &t.AuthorID); err != nil {
+			return nil, fmt.Errorf("ошибка при сканировании команды: %w", err)
+		}
+		tasks = append(tasks, t)
+	}
+
+	return tasks, nil
+}

@@ -36,3 +36,13 @@ func CreateTaskHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, task)
 }
+
+func GetTasksHandler(c *gin.Context) {
+	tasks, err := GetTasks()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ошибка при получении задач"})
+		return
+	}
+
+	c.JSON(http.StatusOK, tasks)
+}
