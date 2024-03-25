@@ -167,8 +167,6 @@ func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, e
 		team.InviteToken = nil
 	}
 
-	fmt.Println("TEAMID", team.ID)
-
 	if team.ID != nil {
 		user.Team = &models.Team{
 			Name:        team.Name,
@@ -179,7 +177,6 @@ func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, e
 		}
 
 		members, err = team2.GetTeamMembers(userID)
-		fmt.Println(members)
 		if err != nil {
 			return nil, fmt.Errorf("ошибка при получении участников команды: %w", err)
 		}
