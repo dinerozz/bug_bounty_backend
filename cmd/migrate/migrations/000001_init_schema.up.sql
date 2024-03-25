@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS invites (
 CREATE TABLE IF NOT EXISTS tasks (
     id SERIAL PRIMARY KEY,
     author_id UUID references users(id),
+    category VARCHAR(255),
+    points INTEGER,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     title VARCHAR(255),
     task_description TEXT
