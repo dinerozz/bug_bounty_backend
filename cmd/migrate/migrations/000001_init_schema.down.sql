@@ -2,5 +2,6 @@
 -- drop table if exists invites;
 -- drop table if exists team_members;
 -- drop table if exists teams;
---
+-- drop table if exists user_roles
+-- drop table if exists roles;
 -- drop table if exists users;
