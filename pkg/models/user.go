@@ -16,4 +16,5 @@ type CurrentUser struct {
 	Points   *int      `json:"points"`
 	Email    string    `json:"email"`
 	Team     *Team     `json:"team,omitempty"`
+	IsAdmin  bool      `json:"isAdmin"`
 }

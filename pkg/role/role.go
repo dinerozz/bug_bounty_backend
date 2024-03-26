@@ -36,6 +36,7 @@ func GetUserRole(userID uuid.UUID) (string, error) {
 	err := db.Pool.QueryRow(context.Background(),
 		"SELECT r.name FROM roles r LEFT JOIN user_roles ur on r.id = ur.role_id WHERE ur.user_id = $1", userID).Scan(&userRole)
 
+	fmt.Println("err", err)
 	if err != nil {
 		return "", fmt.Errorf("не удалось получить роль пользователя: %w", err)
 

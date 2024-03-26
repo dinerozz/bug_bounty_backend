@@ -5,6 +5,7 @@ import (
 	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
+	"github.com/dinerozz/bug_bounty_backend/pkg/role"
 	_ "github.com/dinerozz/bug_bounty_backend/pkg/team"
 	team2 "github.com/dinerozz/bug_bounty_backend/pkg/team"
 	"github.com/golang-jwt/jwt/v4"
@@ -68,6 +69,13 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
 	}
 
+	isAdmin, err := ValidateAdminRole(UserID)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при валидации роли пользователя: %w", err)
+	}
+
+	user.IsAdmin = isAdmin
+
 	return &models.AuthResponse{
 		Token:        accessToken,
 		RefreshToken: refreshToken,
@@ -75,6 +83,19 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		RefreshTTL:   refreshTTL,
 		User:         user,
 	}, nil
+}
+
+func ValidateAdminRole(userID uuid.UUID) (bool, error) {
+	userRole, err := role.GetUserRole(userID)
+	if err != nil {
+		return false, fmt.Errorf("ошибка при получении роли пользователя: %w", err)
+	}
+
+	if userRole == "ADMIN" {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func Refresh(refreshToken string) (*models.AuthResponse, error) {
@@ -187,6 +208,13 @@ func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, e
 	} else {
 		user.Team = nil
 	}
+
+	isAdmin, err := ValidateAdminRole(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при валидации роли пользователя: %w", err)
+	}
+
+	user.IsAdmin = isAdmin
 
 	return &user, nil
 }

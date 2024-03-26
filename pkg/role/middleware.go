@@ -19,7 +19,7 @@ func RolesMiddleware(requiredRole string) gin.HandlerFunc {
 
 		userRole, err := GetUserRole(userID)
 		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{"error": "доступ запрещен"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "Role not found"})
 			c.Abort()
 			return
 		}
