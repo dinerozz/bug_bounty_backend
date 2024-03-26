@@ -24,16 +24,28 @@ type Claims struct {
 
 func RegisterUser(username, email, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-
 	if err != nil {
 		return err
 	}
+
 	newUserUUID := uuid.New()
 	_, err = db.Pool.Exec(context.Background(), "INSERT into users (id, username, email, password) VALUES ($1, $2, $3, $4)", newUserUUID, username, email, hashedPassword)
-
 	if err != nil {
 		return fmt.Errorf("ошибка при добавлении пользователя в базу данных: %w", err)
 	}
+
+	var userRoleID uuid.UUID
+	err = db.Pool.QueryRow(context.Background(), "SELECT id FROM roles WHERE name = 'USER'").Scan(&userRoleID)
+	if err != nil {
+		fmt.Println("error", err)
+		return fmt.Errorf("ошибка при получении ID роли USER: %w", err)
+	}
+	fmt.Println("role id", userRoleID)
+	_, err = db.Pool.Exec(context.Background(), "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)", newUserUUID, userRoleID)
+	if err != nil {
+		return fmt.Errorf("ошибка при добавлении роли пользователя в базу данных: %w", err)
+	}
+
 	return nil
 }
 
@@ -69,7 +81,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 		return nil, fmt.Errorf("ошибка при создании токена: %w", err)
 	}
 
-	isAdmin, err := ValidateAdminRole(UserID)
+	isAdmin, err := ValidateRole(UserID)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при валидации роли пользователя: %w", err)
 	}
@@ -85,7 +97,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 	}, nil
 }
 
-func ValidateAdminRole(userID uuid.UUID) (bool, error) {
+func ValidateRole(userID uuid.UUID) (bool, error) {
 	userRole, err := role.GetUserRole(userID)
 	if err != nil {
 		return false, fmt.Errorf("ошибка при получении роли пользователя: %w", err)
@@ -209,7 +221,7 @@ func GetUserByID(dbPool *pgxpool.Pool, userID uuid.UUID) (*models.CurrentUser, e
 		user.Team = nil
 	}
 
-	isAdmin, err := ValidateAdminRole(user.ID)
+	isAdmin, err := ValidateRole(user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при валидации роли пользователя: %w", err)
 	}
