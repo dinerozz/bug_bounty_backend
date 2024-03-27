@@ -46,14 +46,7 @@ func AuthenticateHandler(c *gin.Context) {
 	c.SetCookie("auth_token", authResponse.Token, accessExpiresInSeconds, "/", "", true, true)
 	c.SetCookie("refresh_token", authResponse.RefreshToken, refreshExpiresInSeconds, "/", "", true, true)
 
-	response := models.CurrentUser{
-		Username: authResponse.User.Username,
-		ID:       authResponse.User.ID,
-		Email:    authResponse.User.Email,
-		Team:     authResponse.User.Team,
-	}
-
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, authResponse.User)
 }
 
 func RefreshHandler(c *gin.Context) {

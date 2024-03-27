@@ -83,6 +83,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 
 	isAdmin, err := ValidateRole(UserID)
 	if err != nil {
+		fmt.Println("err", err)
 		return nil, fmt.Errorf("ошибка при валидации роли пользователя: %w", err)
 	}
 
