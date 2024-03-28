@@ -56,6 +56,7 @@ func main() {
 		authRequired.GET("/my-team", team.GetTeamHandler)
 		authRequired.GET("/tasks", task.GetTasksHandler)
 		authRequired.POST("/report", report.CreateReportHandler)
+		authRequired.GET("/report/details", report.ReviewDetailsHandler)
 	}
 
 	adminRoutes := router.Group("/admin")

@@ -54,7 +54,24 @@ func ReviewReportHandler(c *gin.Context) {
 	review, err := ReviewReport(request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ошибка при публикации вердикта"})
+		return
 	}
 
 	c.JSON(http.StatusOK, review)
+}
+
+func ReviewDetailsHandler(c *gin.Context) {
+	var request models.ReviewDetails
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	details, err := ReviewDetails(request.ReportID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось получить детальный вердикт"})
+		return
+	}
+
+	c.JSON(http.StatusOK, details)
 }

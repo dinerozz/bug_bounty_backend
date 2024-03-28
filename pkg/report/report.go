@@ -45,3 +45,16 @@ func ReviewReport(review models.ReportReview) (*models.ReportReview, error) {
 
 	return &review, nil
 }
+
+func ReviewDetails(reportID int) (*models.ReviewDetails, error) {
+	var reviewDetails models.ReviewDetails
+
+	err := db.Pool.QueryRow(context.Background(), "SELECT r.reviewer_id, u.username, r.review_text FROM report_reviews r LEFT JOIN users u on r.reviewer_id = u.id WHERE report_id = $1", reportID).Scan(&reviewDetails.ReviewerID, &reviewDetails.ReviewerUsername, &reviewDetails.ReviewText)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении детального вердикта: %w", err)
+	}
+
+	reviewDetails.ReportID = reportID
+
+	return &reviewDetails, nil
+}
