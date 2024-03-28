@@ -62,5 +62,14 @@ CREATE TABLE IF NOT EXISTS reports (
     author_id UUID references users(id),
     category_id UUID references categories(id),
     title VARCHAR(255),
+    status VARCHAR(255) NOT NULL DEFAULT 'PENDING',
     description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS report_reviews (
+    id SERIAL PRIMARY KEY,
+    report_id int references reports(id),
+    reviewer_id UUID references users(id),
+    review_text TEXT,
+    status VARCHAR(255)
 );
