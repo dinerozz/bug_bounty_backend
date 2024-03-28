@@ -9,14 +9,24 @@ import (
 )
 
 func CreateTask(userID uuid.UUID, task models.Task) (*models.Task, error) {
+	var categoryID uuid.UUID
+
 	err := db.Pool.QueryRow(context.Background(),
-		"INSERT INTO tasks (author_id, title, task_description, category, points, is_active) VALUES ($1, $2, $3, $4, $5, $6) returning id, author_id, title, task_description, category, points, is_active",
-		userID, task.Title, task.Description, task.Category, task.Points, task.IsActive).Scan(&task.ID, &userID,
-		&task.Title, &task.Description, &task.Category, &task.Points, &task.IsActive)
+		"INSERT INTO tasks (author_id, title, task_description, points, is_active, category_id) SELECT $1, $2, $3, $4, $5, c.id FROM categories c WHERE c.name = $6 returning id, author_id, title, task_description, category_id, points, is_active",
+		userID, task.Title, task.Description, task.Points, task.IsActive, task.Category).Scan(&task.ID, &userID,
+		&task.Title, &task.Description, &categoryID, &task.Points, &task.IsActive)
 	if err != nil {
 
 		return nil, fmt.Errorf("ошибка при создании задачи: %w", err)
 	}
+
+	var categoryName string
+	err = db.Pool.QueryRow(context.Background(), "SELECT name FROM categories WHERE id = $1", categoryID).Scan(&categoryName)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении названия категории: %w", err)
+	}
+
+	task.Category = categoryName
 
 	return &models.Task{
 		ID:          task.ID,
@@ -29,7 +39,7 @@ func CreateTask(userID uuid.UUID, task models.Task) (*models.Task, error) {
 }
 
 func GetTasks() ([]models.Task, error) {
-	rows, err := db.Pool.Query(context.Background(), "SELECT id, title, task_description, is_active, author_id, category, points FROM tasks WHERE is_active = true")
+	rows, err := db.Pool.Query(context.Background(), "SELECT t.id, title, task_description, is_active, author_id, c.name, points FROM tasks t LEFT JOIN categories c on t.category_id = c.id  WHERE is_active = true")
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении задач: %w", err)
 	}

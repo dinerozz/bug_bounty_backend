@@ -5,6 +5,7 @@ import (
 	"github.com/dinerozz/bug_bounty_backend/cmd/migrate"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/auth"
+	"github.com/dinerozz/bug_bounty_backend/pkg/report"
 	"github.com/dinerozz/bug_bounty_backend/pkg/role"
 	"github.com/dinerozz/bug_bounty_backend/pkg/task"
 	"github.com/dinerozz/bug_bounty_backend/pkg/team"
@@ -54,6 +55,7 @@ func main() {
 		authRequired.GET("/team/members", team.GetTeamMembersHandler)
 		authRequired.GET("/my-team", team.GetTeamHandler)
 		authRequired.GET("/tasks", task.GetTasksHandler)
+		authRequired.POST("/report", report.CreateReportHandler)
 	}
 
 	adminRoutes := router.Group("/admin")

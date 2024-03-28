@@ -65,7 +65,7 @@ func AuthenticateUser(username, password string) (*models.AuthResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("пользователь не найден: %w", err)
 	}
-
+	//anti plagiarism.NET
 	user, _ = GetUserByID(db.Pool, UserID)
 
 	if err = bcrypt.CompareHashAndPassword([]byte(HashedPassword), []byte(password)); err != nil {

@@ -42,12 +42,25 @@ CREATE TABLE IF NOT EXISTS invites (
                          expires_at TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) UNIQUE
+);
+
 CREATE TABLE IF NOT EXISTS tasks (
     id SERIAL PRIMARY KEY,
     author_id UUID references users(id),
-    category VARCHAR(255),
+    category_id UUID references categories(id),
     points INTEGER,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     title VARCHAR(255),
     task_description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+    id SERIAL PRIMARY KEY,
+    author_id UUID references users(id),
+    category_id UUID references categories(id),
+    title VARCHAR(255),
+    description TEXT
 );
