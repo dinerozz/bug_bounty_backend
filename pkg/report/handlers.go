@@ -34,6 +34,23 @@ func CreateReportHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, report)
 }
 
+func GetReportsHandler(c *gin.Context) {
+	userIDInterface, _ := c.Get("userID")
+	userID, ok := userIDInterface.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "UserID type assertion failed"})
+		return
+	}
+
+	reports, err := GetReports(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось получить отчеты"})
+		return
+	}
+
+	c.JSON(http.StatusOK, reports)
+}
+
 func ReviewReportHandler(c *gin.Context) {
 	userIDInterface, _ := c.Get("userID")
 

@@ -49,7 +49,7 @@ func GetTasks() ([]models.Task, error) {
 
 	for rows.Next() {
 		var t models.Task
-		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &t.IsActive, &t.AuthorID, &t.Category, &t.Points); err != nil {
+		if err = rows.Scan(&t.ID, &t.Title, &t.Description, &t.IsActive, &t.AuthorID, &t.Category, &t.Points); err != nil {
 			return nil, fmt.Errorf("ошибка при сканировании команды: %w", err)
 		}
 		tasks = append(tasks, t)
