@@ -56,7 +56,7 @@ func main() {
 		authRequired.GET("/my-team", team.GetTeamHandler)
 		authRequired.GET("/tasks", task.GetTasksHandler)
 		authRequired.POST("/report", report.CreateReportHandler)
-		authRequired.GET("/reports", report.GetReportsHandler)
+		authRequired.GET("/report", report.GetReportsHandler)
 		authRequired.GET("/report/details", report.ReviewDetailsHandler)
 	}
 

@@ -29,17 +29,17 @@ func CreateReport(report models.Report) (*models.Report, error) {
 	return &report, nil
 }
 
-func GetReports(authorID uuid.UUID) ([]models.Report, error) {
+func GetReports(authorID uuid.UUID) ([]models.GetReports, error) {
 	rows, err := db.Pool.Query(context.Background(), "SELECT r.id, c.name, r.title, r.status from reports r LEFT JOIN categories c on r.category_id = c.id WHERE r.author_id = $1", authorID)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении отчетов: %w", err)
 	}
 	defer rows.Close()
 
-	var reports []models.Report
+	var reports []models.GetReports
 
 	for rows.Next() {
-		var r models.Report
+		var r models.GetReports
 		if err = rows.Scan(&r.ID, &r.Category, &r.Title, &r.Status); err != nil {
 			return nil, fmt.Errorf("ошибка при сканировании отчета")
 		}

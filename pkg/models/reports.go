@@ -24,3 +24,10 @@ type ReviewDetails struct {
 	ReviewerUsername string    `json:"reviewer_username"`
 	ReviewText       string    `json:"review_text"`
 }
+
+type GetReports struct {
+	ID       int    `json:"id"`
+	Title    string `json:"title"`
+	Category string `json:"category"`
+	Status   string `json:"status"`
+}
