@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
 	"github.com/gin-gonic/gin"
@@ -38,11 +37,8 @@ func AuthenticateHandler(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Ошибка при аутентификации: " + err.Error()})
 	}
 
-	fmt.Println("auth response", authResponse.User.Team)
-
 	accessExpiresInSeconds := int(authResponse.AccessTTL.Sub(time.Now()).Seconds())
 	refreshExpiresInSeconds := int(authResponse.RefreshTTL.Sub(time.Now()).Seconds())
-
 	c.SetCookie("auth_token", authResponse.Token, accessExpiresInSeconds, "/", "", true, true)
 	c.SetCookie("refresh_token", authResponse.RefreshToken, refreshExpiresInSeconds, "/", "", true, true)
 

@@ -140,7 +140,7 @@ func Refresh(refreshToken string) (*models.AuthResponse, error) {
 func GenerateTokens(userID uuid.UUID) (accessTokenStr, refreshTokenStr string, err error) {
 	jwtKey := []byte(os.Getenv("JWT_KEY"))
 
-	accessExpirationTime := time.Now().Add(15 * time.Minute)
+	accessExpirationTime := time.Now().Add(60 * time.Minute)
 	accessClaims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
