@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"strconv"
 )
 
 func CreateReportHandler(c *gin.Context) {
@@ -78,13 +79,19 @@ func ReviewReportHandler(c *gin.Context) {
 }
 
 func ReviewDetailsHandler(c *gin.Context) {
-	var request models.ReviewDetails
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	reportIDStr := c.Query("reportId")
+	if reportIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "reportId is required"})
 		return
 	}
 
-	details, err := ReviewDetails(request.ReportID)
+	reportID, err := strconv.Atoi(reportIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid reportId format"})
+		return
+	}
+
+	details, err := ReviewDetails(reportID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось получить детальный вердикт"})
 		return

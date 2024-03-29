@@ -69,7 +69,17 @@ func ReviewReport(review models.ReportReview) (*models.ReportReview, error) {
 func ReviewDetails(reportID int) (*models.ReviewDetails, error) {
 	var reviewDetails models.ReviewDetails
 
-	err := db.Pool.QueryRow(context.Background(), "SELECT r.reviewer_id, u.username, r.review_text FROM report_reviews r LEFT JOIN users u on r.reviewer_id = u.id WHERE report_id = $1", reportID).Scan(&reviewDetails.ReviewerID, &reviewDetails.ReviewerUsername, &reviewDetails.ReviewText)
+	err := db.Pool.QueryRow(context.Background(),
+		`SELECT rr.reviewer_id, u.username, rr.review_text, r.id, u2.username, r.title, r.description, r.status, c.name 
+		FROM report_reviews rr 
+		LEFT JOIN users u ON rr.reviewer_id = u.id 
+		LEFT JOIN reports r ON rr.report_id = r.id 
+		LEFT JOIN categories c ON r.category_id = c.id 
+		LEFT JOIN users u2 ON r.author_id = u2.id 
+		WHERE rr.report_id = $1`, reportID).Scan(&reviewDetails.ReviewerID, &reviewDetails.ReviewerUsername,
+		&reviewDetails.ReviewText, &reviewDetails.ReportData.ID, &reviewDetails.ReportData.Author,
+		&reviewDetails.ReportData.Title, &reviewDetails.ReportData.Description,
+		&reviewDetails.ReportData.Status, &reviewDetails.ReportData.Category)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении детального вердикта: %w", err)
 	}
@@ -77,4 +87,20 @@ func ReviewDetails(reportID int) (*models.ReviewDetails, error) {
 	reviewDetails.ReportID = reportID
 
 	return &reviewDetails, nil
+}
+
+func getReportData(reportID string) (*models.ReportData, error) {
+	var reportData models.ReportData
+	err := db.Pool.QueryRow(context.Background(),
+		`SELECT r.id, u.username, c.name, r.title, r.status, r.description 
+				FROM reports r
+				LEFT JOIN users u on r.author_id = u.id
+				LEFT JOIN categories c on r.category_id = c.id
+            	WHERE r.id = $1`, reportID).Scan(&reportData.ID, &reportData.Author,
+		&reportData.Status, &reportData.Title, &reportData.Status, &reportData.Description)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении данных по отчету: %w", err)
+	}
+
+	return &reportData, nil
 }
