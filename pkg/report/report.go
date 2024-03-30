@@ -2,10 +2,13 @@ package report
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	db "github.com/dinerozz/bug_bounty_backend/config"
 	"github.com/dinerozz/bug_bounty_backend/pkg/models"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
+	"strconv"
 )
 
 func CreateReport(report models.Report) (*models.Report, error) {
@@ -68,36 +71,50 @@ func ReviewReport(review models.ReportReview) (*models.ReportReview, error) {
 
 func ReviewDetails(reportID int) (*models.ReviewDetails, error) {
 	var reviewDetails models.ReviewDetails
-
-	err := db.Pool.QueryRow(context.Background(),
-		`SELECT rr.reviewer_id, u.username, rr.review_text, r.id, u2.username, r.title, r.description, r.status, c.name 
+	var reportDetailsQuery = `SELECT rr.reviewer_id, u.username, rr.review_text, r.id, u2.username, r.title, r.description, r.status, c.name 
 		FROM report_reviews rr 
 		LEFT JOIN users u ON rr.reviewer_id = u.id 
 		LEFT JOIN reports r ON rr.report_id = r.id 
 		LEFT JOIN categories c ON r.category_id = c.id 
 		LEFT JOIN users u2 ON r.author_id = u2.id 
-		WHERE rr.report_id = $1`, reportID).Scan(&reviewDetails.ReviewerID, &reviewDetails.ReviewerUsername,
+		WHERE rr.report_id = $1`
+
+	err := db.Pool.QueryRow(context.Background(),
+		reportDetailsQuery, reportID).Scan(&reviewDetails.ReviewerID, &reviewDetails.ReviewerUsername,
 		&reviewDetails.ReviewText, &reviewDetails.ReportData.ID, &reviewDetails.ReportData.Author,
 		&reviewDetails.ReportData.Title, &reviewDetails.ReportData.Description,
 		&reviewDetails.ReportData.Status, &reviewDetails.ReportData.Category)
-	if err != nil {
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		reportData, reportErr := getReportData(strconv.Itoa(reportID))
+		if reportErr != nil {
+			fmt.Printf("Error fetching report data: %v", reportErr)
+			return nil, reportErr
+		}
+		return &models.ReviewDetails{
+			ReportData: *reportData,
+			ReportID:   reportID,
+		}, nil
+	} else if err != nil {
 		return nil, fmt.Errorf("ошибка при получении детального вердикта: %w", err)
 	}
 
 	reviewDetails.ReportID = reportID
-
 	return &reviewDetails, nil
 }
 
 func getReportData(reportID string) (*models.ReportData, error) {
 	var reportData models.ReportData
-	err := db.Pool.QueryRow(context.Background(),
-		`SELECT r.id, u.username, c.name, r.title, r.status, r.description 
+	var reportQuery = `SELECT r.id, u.username, c.name, r.title, r.status, r.description 
 				FROM reports r
 				LEFT JOIN users u on r.author_id = u.id
 				LEFT JOIN categories c on r.category_id = c.id
-            	WHERE r.id = $1`, reportID).Scan(&reportData.ID, &reportData.Author,
+            	WHERE r.id = $1`
+
+	err := db.Pool.QueryRow(context.Background(),
+		reportQuery, reportID).Scan(&reportData.ID, &reportData.Author,
 		&reportData.Status, &reportData.Title, &reportData.Status, &reportData.Description)
+
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении данных по отчету: %w", err)
 	}

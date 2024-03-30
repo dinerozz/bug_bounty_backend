@@ -29,9 +29,9 @@ type ReportData struct {
 
 type ReviewDetails struct {
 	ReportID         int        `json:"report_id"`
-	ReviewerID       uuid.UUID  `json:"reviewer_id"`
-	ReviewerUsername string     `json:"reviewer_username"`
-	ReviewText       string     `json:"review_text"`
+	ReviewerID       *uuid.UUID `json:"reviewer_id"`
+	ReviewerUsername *string    `json:"reviewer_username"`
+	ReviewText       *string    `json:"review_text"`
 	ReportData       ReportData `json:"report_data"`
 }
 
