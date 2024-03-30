@@ -100,8 +100,8 @@ func getReportData(reportID string, userID uuid.UUID) (*models.ReportData, error
 	var reportData models.ReportData
 
 	err := db.Pool.QueryRow(context.Background(),
-		ReportsQuery, reportID, userID).Scan(&reportData.ID, &reportData.Author,
-		&reportData.Status, &reportData.Title, &reportData.Status, &reportData.Description)
+		ReportsQuery, reportID, userID).Scan(&reportData.ID, &reportData.Author, &reportData.Category,
+		&reportData.Title, &reportData.Status, &reportData.Description)
 
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении данных по отчету: %w", err)
