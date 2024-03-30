@@ -85,13 +85,21 @@ func ReviewDetailsHandler(c *gin.Context) {
 		return
 	}
 
+	userIDInterface, _ := c.Get("userID")
+
+	userID, ok := userIDInterface.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "UserID type assertion failed"})
+		return
+	}
+
 	reportID, err := strconv.Atoi(reportIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid reportId format"})
 		return
 	}
 
-	details, err := ReviewDetails(reportID)
+	details, err := ReviewDetails(reportID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось получить детальный вердикт"})
 		return
