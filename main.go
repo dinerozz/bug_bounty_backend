@@ -7,6 +7,7 @@ import (
 	"github.com/dinerozz/bug_bounty_backend/pkg/auth"
 	"github.com/dinerozz/bug_bounty_backend/pkg/report"
 	"github.com/dinerozz/bug_bounty_backend/pkg/role"
+	"github.com/dinerozz/bug_bounty_backend/pkg/scoreboard"
 	"github.com/dinerozz/bug_bounty_backend/pkg/task"
 	"github.com/dinerozz/bug_bounty_backend/pkg/team"
 	"github.com/gin-gonic/gin"
@@ -42,6 +43,7 @@ func main() {
 	router.POST("/register", auth.RegisterHandler)
 	router.POST("/authenticate", auth.AuthenticateHandler)
 	router.GET("/refresh", auth.RefreshHandler)
+	router.GET("/scoreboard", scoreboard.GetScoreboardHandler)
 
 	authRequired := router.Group("/")
 	authRequired.Use(auth.JWTMiddleware())

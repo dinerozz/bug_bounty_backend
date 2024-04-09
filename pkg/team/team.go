@@ -76,13 +76,13 @@ func GetTeams() ([]models.Teams, error) {
 
 	for rows.Next() {
 		var t models.Teams
-		if err := rows.Scan(&t.ID, &t.Name); err != nil {
+		if err = rows.Scan(&t.ID, &t.Name); err != nil {
 			return nil, fmt.Errorf("ошибка при сканировании команды: %w", err)
 		}
 		teams = append(teams, t)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("ошибка после итерации по командам: %w", err)
 	}
 

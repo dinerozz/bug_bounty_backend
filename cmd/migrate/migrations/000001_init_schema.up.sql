@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS reports (
     category_id UUID references categories(id),
     title VARCHAR(255),
     status VARCHAR(255) NOT NULL DEFAULT 'PENDING',
-    description TEXT
+    description TEXT,
+    team_id INTEGER references teams(id)
 );
 
 CREATE TABLE IF NOT EXISTS report_reviews (

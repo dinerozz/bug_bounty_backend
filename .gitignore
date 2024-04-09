@@ -1,4 +1,6 @@
 .idea
-
+.DS_Store
+cmd/.DS_Store
+pkg/.DS_Store
 # env
 .env

@@ -9,6 +9,7 @@ type Report struct {
 	Description string    `json:"description"`
 	Category    string    `json:"category"`
 	Status      string    `json:"status"`
+	TeamID      int       `json:"team_id"`
 }
 
 type ReportReview struct {
@@ -16,6 +17,7 @@ type ReportReview struct {
 	ReviewerID uuid.UUID `json:"reviewer_id"`
 	ReviewText string    `json:"review_text"`
 	Status     string    `json:"status"`
+	Points     *int      `json:"points"`
 }
 
 type ReportData struct {

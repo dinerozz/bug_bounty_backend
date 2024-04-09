@@ -15,8 +15,8 @@ func CreateReport(report models.Report) (*models.Report, error) {
 	var categoryID uuid.UUID
 
 	err := db.Pool.QueryRow(context.Background(),
-		"INSERT INTO reports (author_id, category_id, title, description) SELECT $1, c.id, $3, $4 FROM categories c WHERE c.name = $2 RETURNING id, author_id, category_id, title, description, status",
-		report.AuthorID, report.Category, report.Title, report.Description).Scan(&report.ID, &report.AuthorID, &categoryID, &report.Title, &report.Description, &report.Status)
+		"INSERT INTO reports (author_id, category_id, title, description, team_id) SELECT $1, c.id, $3, $4, $5 FROM categories c WHERE c.name = $2 RETURNING id, author_id, category_id, title, description, status, team_id",
+		report.AuthorID, report.Category, report.Title, report.Description, report.TeamID).Scan(&report.ID, &report.AuthorID, &categoryID, &report.Title, &report.Description, &report.Status, &report.TeamID)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании отчета: %w", err)
 	}
@@ -53,12 +53,25 @@ func GetReports(authorID uuid.UUID) ([]models.GetReports, error) {
 }
 
 func ReviewReport(review models.ReportReview) (*models.ReportReview, error) {
-	commandTag, err := db.Pool.Exec(context.Background(), "UPDATE reports SET status = $2 where id = $1", review.ReportID, review.Status)
+	var teamID int
+	err := db.Pool.QueryRow(context.Background(), "UPDATE reports SET status = $2 where id = $1 returning team_id", review.ReportID, review.Status).Scan(&teamID)
 	if err != nil {
+		fmt.Println("owibka update reports:", err)
 		return nil, fmt.Errorf("ошибка при принятии отчета: %w", err)
 	}
-	if commandTag.RowsAffected() < 1 {
-		return nil, fmt.Errorf("ошибка при принятии отчета: no rows affected")
+
+	if review.Points != nil && *review.Points > 0 {
+		_, err = db.Pool.Exec(context.Background(), "UPDATE users SET points = COALESCE(points, 0) + $1 FROM reports WHERE reports.id = $2 AND users.id = reports.author_id", *review.Points, review.ReportID)
+		if err != nil {
+			fmt.Println("Ошибка при начислении очков пользователю:", err)
+			return nil, fmt.Errorf("ошибка при начислении очков пользователю: %w", err)
+		}
+
+		_, err = db.Pool.Exec(context.Background(), "UPDATE teams SET points = COALESCE(points, 0) + $1 WHERE id = $2", *review.Points, teamID)
+		if err != nil {
+			fmt.Println("Ошибка при начислении очков команде:", err)
+			return nil, fmt.Errorf("ошибка при начислении очков команде: %w", err)
+		}
 	}
 
 	row := db.Pool.QueryRow(context.Background(), "INSERT INTO report_reviews (report_id, reviewer_id, review_text, status) VALUES ($1, $2, $3, $4) returning reviewer_id, review_text, status", review.ReportID, review.ReviewerID, review.ReviewText, review.Status)

@@ -4,8 +4,8 @@
 -- drop table if exists teams;
 -- drop table if exists user_roles;
 -- drop table if exists roles;
--- drop table if exists reports;
 -- drop table if exists report_reviews;
--- drop table if exists tasks;
--- drop table if exists categories;
+-- DROP TABLE IF EXISTS tasks;
+-- DROP TABLE IF EXISTS reports;
+-- DROP TABLE IF EXISTS categories;
 -- drop table if exists users;
