@@ -53,7 +53,7 @@ func GetReports(authorID uuid.UUID) ([]models.GetReports, error) {
 }
 
 func GetAdminReports() ([]models.GetReports, error) {
-	rows, err := db.Pool.Query(context.Background(), "SELECT r.id, c.name, r.title, r.status FROM reports r LEFT JOIN categories c on r.category_id = c.id")
+	rows, err := db.Pool.Query(context.Background(), "SELECT r.id, c.name, r.title, r.status FROM reports r LEFT JOIN categories c on r.category_id = c.id order by r.id")
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении отчетов: %w", err)
 	}

@@ -8,7 +8,7 @@ FROM
     JOIN users u ON r.author_id = u.id 
     JOIN team_members tm ON u.id = tm.user_id 
 WHERE 
-    tm.team_id IN (SELECT team_id FROM team_members WHERE user_id = $1)`
+    tm.team_id IN (SELECT team_id FROM team_members WHERE user_id = $1) order by r.id`
 
 var DetailsQuery = `SELECT 
     rr.reviewer_id, u.username, rr.review_text, 

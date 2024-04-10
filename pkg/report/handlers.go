@@ -111,9 +111,11 @@ func ReviewDetailsHandler(c *gin.Context) {
 
 	details, err := ReviewDetails(reportID, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось получить детальный вердикт"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
 		return
 	}
 
 	c.JSON(http.StatusOK, details)
 }
+
+// TODO: conversation functionality in report details
