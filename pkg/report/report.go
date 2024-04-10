@@ -41,11 +41,14 @@ func GetReports(authorID uuid.UUID) ([]models.GetReports, error) {
 
 	var reports []models.GetReports
 
+	var id = 0
 	for rows.Next() {
 		var r models.GetReports
-		if err = rows.Scan(&r.ID, &r.Category, &r.Title, &r.Status); err != nil {
+		id++
+		if err = rows.Scan(&r.Category, &r.Title, &r.Status); err != nil {
 			return nil, fmt.Errorf("ошибка при сканировании отчета")
 		}
+		r.ID = id
 		reports = append(reports, r)
 	}
 
@@ -53,17 +56,20 @@ func GetReports(authorID uuid.UUID) ([]models.GetReports, error) {
 }
 
 func GetAdminReports() ([]models.GetReports, error) {
-	rows, err := db.Pool.Query(context.Background(), "SELECT r.id, c.name, r.title, r.status FROM reports r LEFT JOIN categories c on r.category_id = c.id order by r.id")
+	rows, err := db.Pool.Query(context.Background(), "SELECT c.name, r.title, r.status FROM reports r LEFT JOIN categories c on r.category_id = c.id order by r.id")
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении отчетов: %w", err)
 	}
 
+	var id = 0
 	var reports []models.GetReports
 	for rows.Next() {
 		var r models.GetReports
-		if err = rows.Scan(&r.ID, &r.Category, &r.Title, &r.Status); err != nil {
+		id++
+		if err = rows.Scan(&r.Category, &r.Title, &r.Status); err != nil {
 			return nil, fmt.Errorf("ошибка при сканировании отчета")
 		}
+		r.ID = id
 		reports = append(reports, r)
 	}
 

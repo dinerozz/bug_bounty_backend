@@ -1,7 +1,7 @@
 package report
 
 var ReportsTableQuery = `SELECT 
-    r.id, c.name, r.title, r.status 
+    c.name, r.title, r.status 
 FROM 
     reports r 
     LEFT JOIN categories c ON r.category_id = c.id 
