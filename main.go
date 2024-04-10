@@ -69,6 +69,7 @@ func main() {
 		adminRoutes.POST("/user/role", role.SetUserRoleHandler)
 		adminRoutes.POST("/tasks", task.CreateTaskHandler)
 		adminRoutes.POST("/report/review", report.ReviewReportHandler)
+		adminRoutes.GET("/reports", report.GetAdminReportsHandler)
 	}
 
 	log.Println("Запуск сервера на http://localhost:5555")

@@ -52,6 +52,16 @@ func GetReportsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, reports)
 }
 
+func GetAdminReportsHandler(c *gin.Context) {
+	reports, err := GetAdminReports()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось получить отчеты"})
+		return
+	}
+
+	c.JSON(http.StatusOK, reports)
+}
+
 func ReviewReportHandler(c *gin.Context) {
 	userIDInterface, _ := c.Get("userID")
 

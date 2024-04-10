@@ -52,6 +52,24 @@ func GetReports(authorID uuid.UUID) ([]models.GetReports, error) {
 	return reports, nil
 }
 
+func GetAdminReports() ([]models.GetReports, error) {
+	rows, err := db.Pool.Query(context.Background(), "SELECT r.id, c.name, r.title, r.status FROM reports r LEFT JOIN categories c on r.category_id = c.id")
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении отчетов: %w", err)
+	}
+
+	var reports []models.GetReports
+	for rows.Next() {
+		var r models.GetReports
+		if err = rows.Scan(&r.ID, &r.Category, &r.Title, &r.Status); err != nil {
+			return nil, fmt.Errorf("ошибка при сканировании отчета")
+		}
+		reports = append(reports, r)
+	}
+
+	return reports, nil
+}
+
 func ReviewReport(review models.ReportReview) (*models.ReportReview, error) {
 	var teamID int
 	err := db.Pool.QueryRow(context.Background(), "UPDATE reports SET status = $2 where id = $1 returning team_id", review.ReportID, review.Status).Scan(&teamID)
