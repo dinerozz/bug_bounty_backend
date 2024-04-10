@@ -15,6 +15,10 @@ func CreateTeam(team *models.Team) (*models.Team, error) {
 
 	team.InviteToken = &inviteToken
 
+	if team.Name == nil || len(*team.Name) < 2 {
+		return nil, fmt.Errorf("слишком короткое название команды")
+	}
+
 	err := db.Pool.QueryRow(context.Background(),
 		"INSERT INTO teams (name, owner_id, invite_token) VALUES ($1, $2, $3) RETURNING id, invite_token",
 		team.Name, team.OwnerID, inviteToken).Scan(&team.ID, &inviteToken)

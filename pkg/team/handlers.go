@@ -36,12 +36,6 @@ func CreateTeamHandler(c *gin.Context) {
 		return
 	}
 
-	if len(*team.Name) < 2 {
-		fmt.Println(team.Name)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Слишком короткое название команды"})
-		return
-	}
-
 	c.JSON(http.StatusCreated, team)
 }
 
