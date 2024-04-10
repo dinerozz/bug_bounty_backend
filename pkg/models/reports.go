@@ -39,6 +39,7 @@ type ReviewDetails struct {
 
 type GetReports struct {
 	ID       int    `json:"id"`
+	ReportID int    `json:"report_id"`
 	Title    string `json:"title"`
 	Category string `json:"category"`
 	Status   string `json:"status"`
