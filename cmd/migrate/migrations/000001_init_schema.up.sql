@@ -74,3 +74,10 @@ CREATE TABLE IF NOT EXISTS report_reviews (
     review_text TEXT,
     status VARCHAR(255)
 );
+
+CREATE TABLE IF NOT EXISTS report_conversations (
+    id UUID PRIMARY KEY,
+    report_id int references reports(id),
+    user_id UUID references users(id),
+    message TEXT,
+)

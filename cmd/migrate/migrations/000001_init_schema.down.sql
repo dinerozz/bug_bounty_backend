@@ -5,6 +5,7 @@
 -- drop table if exists user_roles;
 -- drop table if exists roles;
 -- drop table if exists report_reviews;
+-- drop table if exists report_conversations;
 -- DROP TABLE IF EXISTS tasks;
 -- DROP TABLE IF EXISTS reports;
 -- DROP TABLE IF EXISTS categories;
