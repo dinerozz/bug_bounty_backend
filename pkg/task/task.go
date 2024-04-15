@@ -46,7 +46,6 @@ func GetTasks() ([]models.Task, error) {
 	defer rows.Close()
 
 	var tasks []models.Task
-
 	for rows.Next() {
 		var t models.Task
 		if err = rows.Scan(&t.ID, &t.Title, &t.Description, &t.IsActive, &t.AuthorID, &t.Category, &t.Points); err != nil {
