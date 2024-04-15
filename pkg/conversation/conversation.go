@@ -9,6 +9,7 @@ import (
 )
 
 func SendMessage(conversation models.Conversation) (*models.Conversation, error) {
+	// TODO: add anti-spam mechanism
 	err := db.Pool.QueryRow(context.Background(), "INSERT INTO report_conversations (report_id, user_id, message) VALUES ($1, $2, $3) returning id, report_id, user_id, message",
 		conversation.ReportID, conversation.UserID, conversation.Message).Scan(&conversation.ID, &conversation.ReportID, &conversation.UserID, &conversation.Message)
 	if err != nil {
