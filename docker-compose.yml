@@ -17,13 +17,15 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build: .
+    ports:
+      - "5555:5555"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
 
-#  app:
-#    build: .
-#    ports:
-#      - "5555:5555"
-#    depends_on:
-#      db:
-#        condition: service_healthy
+
