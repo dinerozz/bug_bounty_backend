@@ -119,6 +119,7 @@ func ReviewReport(review models.ReportReview) (*models.ReportReview, error) {
 	return &review, nil
 }
 
+// TODO: Refactor this function, fix bug with report data when admin is not team participant
 func ReviewDetails(reportID int, userID uuid.UUID) (*models.ReviewDetails, error) {
 	var reviewDetails models.ReviewDetails
 
