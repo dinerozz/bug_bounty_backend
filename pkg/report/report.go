@@ -78,9 +78,9 @@ func GetAdminReports() ([]models.GetReports, error) {
 
 func ReviewReport(review models.ReportReview) (*models.ReportReview, error) {
 	var teamID int
-	err := db.Pool.QueryRow(context.Background(), "UPDATE reports SET status = $2 where id = $1 returning team_id", review.ReportID, review.Status).Scan(&teamID)
+	err := db.Pool.QueryRow(context.Background(), "UPDATE reports SET status = $2 WHERE id = $1 RETURNING team_id", review.ReportID, review.Status).Scan(&teamID)
 	if err != nil {
-		fmt.Println("owibka update reports:", err)
+		fmt.Println("Ошибка при обновлении отчета:", err)
 		return nil, fmt.Errorf("ошибка при принятии отчета: %w", err)
 	}
 
@@ -98,9 +98,22 @@ func ReviewReport(review models.ReportReview) (*models.ReportReview, error) {
 		}
 	}
 
-	row := db.Pool.QueryRow(context.Background(), "INSERT INTO report_reviews (report_id, reviewer_id, review_text, status) VALUES ($1, $2, $3, $4) returning reviewer_id, review_text, status", review.ReportID, review.ReviewerID, review.ReviewText, review.Status)
-	if err = row.Scan(&review.ReviewerID, &review.ReviewText, &review.Status); err != nil {
-		return nil, fmt.Errorf("ошибка при сохранении вердикта: %w", err)
+	var existingReviewID int
+	err = db.Pool.QueryRow(context.Background(), "SELECT id FROM report_reviews WHERE report_id = $1 AND reviewer_id = $2", review.ReportID, review.ReviewerID).Scan(&existingReviewID)
+	if err != nil && err != pgx.ErrNoRows {
+		return nil, fmt.Errorf("ошибка при проверке существующего вердикта: %w", err)
+	}
+
+	if existingReviewID > 0 {
+		_, err = db.Pool.Exec(context.Background(), "UPDATE report_reviews SET review_text = $1, status = $2 WHERE id = $3", review.ReviewText, review.Status, existingReviewID)
+		if err != nil {
+			return nil, fmt.Errorf("ошибка при обновлении вердикта: %w", err)
+		}
+	} else {
+		row := db.Pool.QueryRow(context.Background(), "INSERT INTO report_reviews (report_id, reviewer_id, review_text, status) VALUES ($1, $2, $3, $4) RETURNING reviewer_id, review_text, status", review.ReportID, review.ReviewerID, review.ReviewText, review.Status)
+		if err = row.Scan(&review.ReviewerID, &review.ReviewText, &review.Status); err != nil {
+			return nil, fmt.Errorf("ошибка при сохранении вердикта: %w", err)
+		}
 	}
 
 	return &review, nil

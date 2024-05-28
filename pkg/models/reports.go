@@ -16,8 +16,9 @@ type ReportReview struct {
 	ReportID   int       `json:"report_id"`
 	ReviewerID uuid.UUID `json:"reviewer_id"`
 	ReviewText string    `json:"review_text"`
-	Status     string    `json:"status"`
-	Points     *int      `json:"points"`
+	Status     string    `json:"
+"`
+	Points *int `json:"points"`
 }
 
 type ReportData struct {
