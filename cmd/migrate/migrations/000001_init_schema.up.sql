@@ -79,5 +79,6 @@ CREATE TABLE IF NOT EXISTS report_conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     report_id int references reports(id),
     user_id UUID references users(id),
-    message TEXT
+    message TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
 );

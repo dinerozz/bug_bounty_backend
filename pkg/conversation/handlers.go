@@ -55,7 +55,16 @@ func GetMessagesHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "reportId is required"})
 		return
 	}
-	// add check for team report
+
+	isInTeam, err := IsUserInTeam(reportIDStr, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if !isInTeam {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User is not part of the team"})
+		return
+	}
 
 	messages, err := GetMessages(reportIDStr, userID)
 	if err != nil {
